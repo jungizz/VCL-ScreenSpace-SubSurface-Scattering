@@ -19,20 +19,52 @@ out vec4 out_Color;
 
 const float PI = 3.14159265358979f;
 
+
+
+float V_SmithGGXCorrelated(float NoV, float NoL, float roughness) {
+    float a2 = roughness * roughness;
+    float GGXL = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
+    float GGXV = NoL * sqrt((-NoV * a2 + NoV) * NoV + a2);
+    return 0.5 / (GGXV + GGXL);
+}
+
+float D_GGX(float NoH, float roughness) {
+    float a2 = roughness * roughness;
+    float f = (NoH * a2 - NoH) * NoH + 1.0;
+    return a2 / (PI * f * f);
+}
+
+vec3 F_Schlick(float u, vec3 f0) {
+    return f0 + (vec3(1.0) - f0) * pow(1.0 - u, 5.0);
+}
+
+
 void main(void)
 {
-	vec3 l = lightPosition - worldPosition; // light vector
-	vec3 L = normalize(l); // light unit vector
-	vec3 N = normalize(normal); // normal unit vector
+	vec3 l = normalize(lightPosition - worldPosition);  // light unit vector
+	vec3 n = normalize(normal);							// normal unit vector
+	vec3 v = normalize(cameraPosition - worldPosition); // view unit vector
+	vec3 h = normalize(l+v);							// half unit vector
 
-	vec3 V = normalize(cameraPosition - worldPosition); // view unit vector
-	vec3 R = 2 * dot(L, N) * N - L;
-	vec3 I = lightColor / dot(l, l);
-
-	vec4 c4 = texture(diffTex, texCoords);
-	c4 *= 1.0/PI; // diffuse BRDF
-	vec3 c = c4.rgb * max(0, dot(L,N)) * I + c4.rgb * ambientLight;
-	c += pow(max(0, dot(R, V)), 1000) * I;
+	float NoV = abs(dot(n, v)) + 1e-5;
+	float NoL = clamp(dot(n, l), 0.0, 1.0);
+	float NoH = clamp(dot(n, h), 0.0, 1.0);
+	float LoH = clamp(dot(l, h), 0.0, 1.0);
 	
-	out_Color = vec4(pow(c, vec3(1 / 2.2)), 1);
+	vec3 f0 = vec3(0.97, 0.96, 0.91); // 임의 지정 
+	float roughness = 0.6; // 임의 지정
+
+	float D = D_GGX(NoH, NoH * roughness);
+	float V = V_SmithGGXCorrelated(NoV, NoL, roughness);
+	vec3 F = F_Schlick(LoH, f0);
+
+	// specular BRDF
+	vec3 Fr = (D * V) * F;
+
+	// diffuse BRDF
+	vec4 DiffColor = texture(diffTex, texCoords);
+	vec3 Fd = DiffColor.xyz / PI ;
+
+	// final
+	out_Color.xyz = Fd + Fr;
 }
