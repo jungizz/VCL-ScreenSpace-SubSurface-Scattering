@@ -54,6 +54,11 @@ GLuint normTex = 0; // normal map ID
 GLuint roughTex = 0; // roughness map ID
 GLuint specTex = 0; // specularAO map ID (빨간부분은 specular, 파란부분은 ambient occlusion? 요런느낌)
 
+vec3 lightPosition = vec3(3, 10, 5);
+vec3 lightColor = vec3(180);
+vec3 ambientLight = vec3(0.0);
+
+
 void init() {
     if (!loadObj("LPS_Head.obj")) {
         std::cerr << "Failed to load the model!" << std::endl;
@@ -184,7 +189,7 @@ void render(GLFWwindow* window) {
     glUniform4fv(colorLocation, 1, value_ptr(diffuseColor[0]));
 
     GLuint shininessLocation = glGetUniformLocation(program.programID, "shininess");
-    glUniform1f(shininessLocation, shininess[0]);
+    glUniform1f(shininessLocation, shininess[0]);*/
 
     GLuint lightPositionLocation = glGetUniformLocation(program.programID, "lightPosition");
     glUniform3fv(lightPositionLocation, 1, value_ptr(lightPosition));
@@ -193,7 +198,7 @@ void render(GLFWwindow* window) {
     glUniform3fv(lightColorLocation, 1, value_ptr(lightColor));
 
     GLuint ambientLightLocation = glGetUniformLocation(program.programID, "ambientLight");
-    glUniform3fv(ambientLightLocation, 1, value_ptr(ambientLight));*/
+    glUniform3fv(ambientLightLocation, 1, value_ptr(ambientLight));
 
 
 
