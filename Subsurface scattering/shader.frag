@@ -41,7 +41,8 @@ vec3 F_Schlick(float u, vec3 f0) {
 
 void main(void)
 {
-	vec3 l = normalize(lightPosition - worldPosition);  // light unit vector
+	vec3 L = lightPosition - worldPosition;
+	vec3 l = normalize(L);  // light unit vector
 	vec3 n = normalize(normal);							// normal unit vector
 	vec3 v = normalize(cameraPosition - worldPosition); // view unit vector
 	vec3 h = normalize(l+v);							// half unit vector
@@ -51,14 +52,14 @@ void main(void)
 	float NoH = clamp(dot(n, h), 0.0, 1.0);
 	float LoH = clamp(dot(l, h), 0.0, 1.0);
 	
-	vec3 f0 = vec3(0.97, 0.96, 0.91); // 임의 지정 
-	float roughness = 0.6; // 임의 지정
+	vec3 f0 = vec3(0.028, 0.028, 0.028); // skin specular reflectance at normal incidnece angle
+	float roughness = texture(roughTex, texCoords).x;
 
+	// specular BRDF
 	float D = D_GGX(NoH, NoH * roughness);
 	float V = V_SmithGGXCorrelated(NoV, NoL, roughness);
 	vec3 F = F_Schlick(LoH, f0);
 
-	// specular BRDF
 	vec3 Fr = (D * V) * F;
 
 	// diffuse BRDF
@@ -66,5 +67,7 @@ void main(void)
 	vec3 Fd = DiffColor.xyz / PI ;
 
 	// final
-	out_Color.xyz = Fd + Fr;
+	vec3 c = (Fd + Fr) * (lightColor/dot(L, L)) * dot(l, n);
+	//out_Color = vec4(pow(c, vec3(1/2.2)), 1);
+	out_Color = vec4(c, DiffColor.a);
 }

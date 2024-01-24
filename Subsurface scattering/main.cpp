@@ -55,7 +55,7 @@ GLuint roughTex = 0; // roughness map ID
 GLuint specTex = 0; // specularAO map ID (빨간부분은 specular, 파란부분은 ambient occlusion? 요런느낌)
 
 vec3 lightPosition = vec3(3, 10, 5);
-vec3 lightColor = vec3(180);
+vec3 lightColor = vec3(700);
 vec3 ambientLight = vec3(0.0);
 
 
