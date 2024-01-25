@@ -61,7 +61,7 @@ GLuint normTex = 0; // normal map ID
 GLuint roughTex = 0; // roughness map ID
 GLuint specTex = 0; // specularAO map ID (빨간부분은 specular, 파란부분은 ambient occlusion? 요런느낌)
 
-vec3 lightPosition = vec3(3, 10, 5);
+vec3 lightPosition = vec3(3, 3, 10);
 vec3 lightColor = vec3(500);
 vec3 ambientLight = vec3(0.0);
 
@@ -200,11 +200,12 @@ GLuint loadTextureMap(const char* filename)
     void* buf = stbi_load(filename, &w, &h, &n, 4);
     glGenTextures(1, &texID);
     glBindTexture(GL_TEXTURE_2D, texID);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+    glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free(buf);
     return texID;
 }

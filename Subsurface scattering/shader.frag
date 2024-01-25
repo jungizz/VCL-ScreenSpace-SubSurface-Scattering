@@ -67,14 +67,16 @@ void main(void)
 
 	// normal mapping
 	mat3 TBN = getTBN(n);
-	float dBdu = texture(normTex, texCoords + vec2(TEX_DELTA, 0)).r
+/*	float dBdu = texture(normTex, texCoords + vec2(TEX_DELTA, 0)).r
 			  -texture(normTex, texCoords - vec2(TEX_DELTA, 0)).r;
 	float dBdv = texture(normTex, texCoords + vec2(0, TEX_DELTA)).r
 			  -texture(normTex, texCoords - vec2(0, TEX_DELTA)).r;
 
 	float normDegree = 1.5;
     vec3 bumpVec = vec3(-dBdu * normDegree, -dBdv * normDegree, 1);
-	n = normalize(TBN * bumpVec);
+*/
+	vec3 normVec = texture(normTex,texCoords).rgb*2-1; // [0, 1] -> [-1, 1]
+	n = normalize(TBN * normVec);
 	//n = normalize(n - (dBdu * TBN[0] * normDegree) - (dBdv * TBN[1] * normDegree));
 
 
