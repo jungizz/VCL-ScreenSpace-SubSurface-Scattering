@@ -1,3 +1,7 @@
+//
+//  Created by Song Jungeun on 2024/1/4
+//
+
 #version 150 core
 
 uniform vec3 cameraPosition;
@@ -38,11 +42,14 @@ vec3 F_Schlick(float u, vec3 f0) {
     return f0 + (vec3(1.0) - f0) * pow(1.0 - u, 5.0);
 }
 
+float Fd_Lambert(){
+	return 1.0 / PI;
+}
 
 void main(void)
 {
-	vec3 L = lightPosition - worldPosition;
-	vec3 l = normalize(L);  // light unit vector
+	vec3 L = lightPosition - worldPosition;				// light unit vector
+	vec3 l = normalize(L);							    // light unit vector
 	vec3 n = normalize(normal);							// normal unit vector
 	vec3 v = normalize(cameraPosition - worldPosition); // view unit vector
 	vec3 h = normalize(l+v);							// half unit vector
@@ -52,8 +59,9 @@ void main(void)
 	float NoH = clamp(dot(n, h), 0.0, 1.0);
 	float LoH = clamp(dot(l, h), 0.0, 1.0);
 	
-	vec3 f0 = vec3(0.028, 0.028, 0.028); // skin specular reflectance at normal incidnece angle
-	float roughness = texture(roughTex, texCoords).x;
+	vec3 f0 = vec3(0.028, 0.028, 0.028); // 'skin' specular reflectance at normal incidnece angle
+	float roughness = texture(roughTex, texCoords).r;
+	roughness *= roughness; // remapping roughness (alpha)
 
 	// specular BRDF
 	float D = D_GGX(NoH, NoH * roughness);
@@ -63,11 +71,12 @@ void main(void)
 	vec3 Fr = (D * V) * F;
 
 	// diffuse BRDF
-	vec4 DiffColor = texture(diffTex, texCoords);
-	vec3 Fd = DiffColor.xyz / PI ;
+	vec4 diffColor = texture(diffTex, texCoords);
+	diffColor.rgb = pow(diffColor.rgb, vec3(2.2)); // gamma correction (to linear space)
+	vec3 Fd = diffColor.rgb * Fd_Lambert();
 
 	// final
-	vec3 c = (Fd + Fr) * (lightColor/dot(L, L)) * dot(l, n);
-	//out_Color = vec4(pow(c, vec3(1/2.2)), 1);
-	out_Color = vec4(c, DiffColor.a);
+	vec3 c = (Fd + Fr) * (lightColor/dot(L, L)) * NoL;
+	out_Color = vec4(pow(c, vec3(1/2.2)), diffColor.a); // gamma correction (to srgb)
+	
 }

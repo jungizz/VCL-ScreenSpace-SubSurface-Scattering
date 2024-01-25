@@ -1,3 +1,7 @@
+//
+//  Created by Song Jungeun on 2024/1/4
+//
+
 #pragma once
 
 #ifndef moveCam_h
@@ -14,7 +18,7 @@ const float PI = 3.14159265358979f;
 //float scaleFactor = 1.0;
 //bool isShrinking = true;
 //float theta = 0;
-float cameraDistance = 0.5;
+float cameraDistance = 0.4;
 
 float cameraTheta = 0;      // 수평 회전 각도
 float cameraPhi = 0;        // 수직 회전 각도
