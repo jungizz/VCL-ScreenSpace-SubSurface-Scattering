@@ -22,6 +22,8 @@ using namespace glm;
 void render(GLFWwindow* window);
 void init();
 
+GLuint loadTextureMap(const char* filename);
+
 
 int main(void) 
 {
@@ -109,53 +111,10 @@ void init() {
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangles.size() * sizeof(u32vec3), triangles.data(), GL_STATIC_DRAW);
 
     // Texture
-    // load diffuse map
-    int w, h, n;
-    void* buf = stbi_load("LPS_lambertian.jpg", &w, &h, &n, 4);
-    glGenTextures(1, &diffTex);
-    glBindTexture(GL_TEXTURE_2D, diffTex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-    //glTexImage2D(GL_TEXTURE_2D, 0, GL_SRGB8_ALPHA8, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-    stbi_image_free(buf);
-
-    // load normal map
-    buf = stbi_load("LPS_NormalMap.png", &w, &h, &n, 4);
-    glGenTextures(1, &normTex);
-    glBindTexture(GL_TEXTURE_2D, normTex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-    stbi_image_free(buf);
-
-    // load roughness map
-    buf = stbi_load("LPS_Roughness.png", &w, &h, &n, 4);
-    glGenTextures(1, &roughTex);
-    glBindTexture(GL_TEXTURE_2D, roughTex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-    stbi_image_free(buf);
-
-    // load specularAO map
-    buf = stbi_load("LPS+SpecularAO.png", &w, &h, &n, 4);
-    glGenTextures(1, &specTex);
-    glBindTexture(GL_TEXTURE_2D, specTex);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
-    stbi_image_free(buf);
-
-
+    diffTex= loadTextureMap("LPS_lambertian.jpg");
+    normTex = loadTextureMap("LPS_NormalMap.png");
+    roughTex = loadTextureMap("LPS_Roughness.png");
+    specTex = loadTextureMap("LPS_SpecularAO.png");
 }
 
 
@@ -234,3 +193,18 @@ void render(GLFWwindow* window) {
     glDrawElements(GL_TRIANGLES, triangles.size()*3, GL_UNSIGNED_INT, 0);
 }
 
+GLuint loadTextureMap(const char* filename)
+{
+    int w, h, n;
+    GLuint texID;
+    void* buf = stbi_load(filename, &w, &h, &n, 4);
+    glGenTextures(1, &texID);
+    glBindTexture(GL_TEXTURE_2D, texID);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, w, h, 0, GL_RGBA, GL_UNSIGNED_BYTE, buf);
+    stbi_image_free(buf);
+    return texID;
+}
