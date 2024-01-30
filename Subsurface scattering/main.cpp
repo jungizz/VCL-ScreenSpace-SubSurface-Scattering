@@ -54,12 +54,13 @@ GLuint normalBuffer = 0;
 GLuint texcoordBuffer = 0;
 GLuint vertexArray = 0; // 버텍스어레이 ID
 GLuint elementBuffer = 0;
+GLuint frameBuffer = 0;
 Program program;
 
 GLuint diffTex = 0; // duffuse map ID
 GLuint normTex = 0; // normal map ID
 GLuint roughTex = 0; // roughness map ID
-GLuint specTex = 0; // specularAO map ID (빨간부분은 specular, 파란부분은 ambient occlusion? 요런느낌)
+GLuint specAOTex = 0; // specularAO map ID (빨간부분은 specular, 파란부분은 ambient occlusion? 요런느낌)
 
 vec3 lightPosition = vec3(3, 3, 10);
 vec3 lightColor = vec3(500);
@@ -114,11 +115,39 @@ void init() {
     diffTex= loadTextureMap("LPS_lambertian.jpg");
     normTex = loadTextureMap("LPS_NormalMap.png");
     roughTex = loadTextureMap("LPS_Roughness.png");
-    specTex = loadTextureMap("LPS_SpecularAO.png");
+    specAOTex = loadTextureMap("LPS_SpecularAO.png");
+
+
+    // 3. Frame Buffer Object (FBO)
+    glGenFramebuffers(1, &frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    
+    // texture buffer object to be used for colorbuffer
+    GLuint colorTexBuffer;
+    glGenTextures(1, &colorTexBuffer);
+    glBindTexture(GL_TEXTURE_2D, colorTexBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexBuffer, 0); // attachment
+
+    // texture buffer object to be used for depth buffer
+    GLuint depthBuffer = 0;
+    glGenTextures(1, &depthBuffer);
+    glBindTexture(GL_TEXTURE_2D, depthBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 640, 480, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0); // attachment
+
+    if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!= GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 
 void render(GLFWwindow* window) {
+    //glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
     int width, height;
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
@@ -183,14 +212,15 @@ void render(GLFWwindow* window) {
     glUniform1i(roughTexLocation, 2);
 
     glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, specTex);
-    GLuint specTexLocation = glGetUniformLocation(program.programID, "specTex");
+    glBindTexture(GL_TEXTURE_2D, specAOTex);
+    GLuint specTexLocation = glGetUniformLocation(program.programID, "specAOTex");
     glUniform1i(specTexLocation, 3);
-
 
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     glDrawElements(GL_TRIANGLES, triangles.size()*3, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
 }
 
 GLuint loadTextureMap(const char* filename)

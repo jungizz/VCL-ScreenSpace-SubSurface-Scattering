@@ -13,7 +13,7 @@ uniform vec3 ambientLight;
 uniform sampler2D diffTex;
 uniform sampler2D normTex;
 uniform sampler2D roughTex;
-uniform sampler2D specTex;
+uniform sampler2D specAOTex;
 
 in vec3 normal;
 in vec3 worldPosition;
@@ -67,17 +67,8 @@ void main(void)
 
 	// normal mapping
 	mat3 TBN = getTBN(n);
-/*	float dBdu = texture(normTex, texCoords + vec2(TEX_DELTA, 0)).r
-			  -texture(normTex, texCoords - vec2(TEX_DELTA, 0)).r;
-	float dBdv = texture(normTex, texCoords + vec2(0, TEX_DELTA)).r
-			  -texture(normTex, texCoords - vec2(0, TEX_DELTA)).r;
-
-	float normDegree = 1.5;
-    vec3 bumpVec = vec3(-dBdu * normDegree, -dBdv * normDegree, 1);
-*/
 	vec3 normVec = texture(normTex,texCoords).rgb*2-1; // [0, 1] -> [-1, 1]
-	n = normalize(TBN * normVec);
-	//n = normalize(n - (dBdu * TBN[0] * normDegree) - (dBdv * TBN[1] * normDegree));
+	n = normalize(TBN * normVec);;
 
 
 	float NoV = abs(dot(n, v)) + 1e-5;
@@ -103,9 +94,9 @@ void main(void)
 	diffColor.rgb = pow(diffColor.rgb, vec3(2.2)); // gamma correction (to linear space)
 	vec3 Fd = diffColor.rgb * Fd_Lambert();
 	
+	vec4 spec = texture(specAOTex, texCoords);
 
 	// final
 	vec3 c = (Fd + Fr) * (lightColor/dot(L, L)) * NoL;
 	out_Color = vec4(pow(c, vec3(1/2.2)), diffColor.a); // gamma correction (to srgb)
-	
 }

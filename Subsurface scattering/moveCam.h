@@ -25,8 +25,6 @@ float cameraPhi = 0;        // 수직 회전 각도
 float fovy = 30 * PI / 180; // 시야각
 
 
-
-
 void cursorPosCallback(GLFWwindow* win, double xpos, double ypos) {
     static double lastX = 0;
     static double lastY = 0;
