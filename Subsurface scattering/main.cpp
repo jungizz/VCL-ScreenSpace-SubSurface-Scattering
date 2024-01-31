@@ -24,12 +24,14 @@ void init();
 
 GLuint loadTextureMap(const char* filename);
 
+int width = 640;
+int height = 480;
 
 int main(void) 
 {
     if (!glfwInit()) exit(EXIT_FAILURE);                                    // glfw 핵심 객체 초기화
     glfwWindowHint(GLFW_SAMPLES, 8);                                        // 생성할 Window의 기본 설정
-    GLFWwindow* window = glfwCreateWindow(640, 480, "Hello", NULL, NULL);   // 창 객체 생성
+    GLFWwindow* window = glfwCreateWindow(width, height, "Hello", NULL, NULL);   // 창 객체 생성
 
     glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetScrollCallback(window, scrollCallback);
@@ -48,14 +50,30 @@ int main(void)
 }
 
 
-
 GLuint vertexBuffer = 0; // 버퍼 ID (GLuint: Opengl의 unsigned long형)
 GLuint normalBuffer = 0;
 GLuint texcoordBuffer = 0;
 GLuint vertexArray = 0; // 버텍스어레이 ID
 GLuint elementBuffer = 0;
+
+GLuint quadVertexBuffer = 0;
+GLuint quadArrrayBuffer = 0;
+float quadVertices[] = { // 화면 전체에 렌더링하기 위한 사각형 정점 데이터
+    -1.0f,  1.0f, 0.0f,  // 왼쪽 상단
+    -1.0f, -1.0f, 0.0f,  // 왼쪽 하단
+     1.0f, -1.0f, 0.0f,  // 오른쪽 하단
+
+    -1.0f,  1.0f, 0.0f,  // 왼쪽 상단
+     1.0f, -1.0f, 0.0f,  // 오른쪽 하단
+     1.0f,  1.0f, 0.0f   // 오른쪽 상단
+};
+
 GLuint frameBuffer = 0;
+GLuint colorTexBuffer = 0;
+GLuint depthBuffer = 0;
+
 Program program;
+Program screenProgram;
 
 GLuint diffTex = 0; // duffuse map ID
 GLuint normTex = 0; // normal map ID
@@ -74,10 +92,9 @@ void init() {
         exit(EXIT_FAILURE);
     }
     program.loadShaders("shader.vert", "shader.frag");
+    screenProgram.loadShaders("screenShader.vert", "screenShader.frag");
 
-
-    // <버텍스 정보 저장>
-    // 1. Vertex Buffer Object (VBO)
+    // Vertex Buffer Object (VBO)
     glGenBuffers(1, &vertexBuffer); // 버퍼 1개 생성
     glBindBuffer(GL_ARRAY_BUFFER, vertexBuffer); // 사용할 버퍼 선언(바인딩; 하이라이팅)
     glBufferData(GL_ARRAY_BUFFER, vertices.size()*sizeof(vec3), vertices.data(), GL_STATIC_DRAW); // 버퍼에 버텍스 정보 데이터 저장
@@ -90,7 +107,7 @@ void init() {
     glBindBuffer(GL_ARRAY_BUFFER, texcoordBuffer);
     glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(vec2), texcoords.data(), GL_STATIC_DRAW);
 
-    // 2. Vertex Array Object (VAO)
+    // Vertex Array Object (VAO)
     glGenVertexArrays(1, &vertexArray); // 버텍스어레이 1개 생성
     glBindVertexArray(vertexArray); // 사용할 버텍스어레이 선언
 
@@ -111,6 +128,7 @@ void init() {
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer); 
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangles.size() * sizeof(u32vec3), triangles.data(), GL_STATIC_DRAW);
 
+
     // Texture
     diffTex= loadTextureMap("LPS_lambertian.jpg");
     normTex = loadTextureMap("LPS_NormalMap.png");
@@ -118,54 +136,62 @@ void init() {
     specAOTex = loadTextureMap("LPS_SpecularAO.png");
 
 
-    // 3. Frame Buffer Object (FBO)
+    // screen quad VAO
+    glGenBuffers(1, &quadVertexBuffer);
+    glGenVertexArrays(1, &quadArrrayBuffer);
+    glBindVertexArray(quadArrrayBuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, quadVertexBuffer);
+    glBufferData(GL_ARRAY_BUFFER, sizeof(quadVertices), &quadVertices, GL_STATIC_DRAW);
+    glEnableVertexAttribArray(0);
+    glVertexAttribPointer(0, 3, GL_FLOAT, 0, 0, 0);
+
+
+    // Frame Buffer Object (FBO)
     glGenFramebuffers(1, &frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
     
     // texture buffer object to be used for colorbuffer
-    GLuint colorTexBuffer;
     glGenTextures(1, &colorTexBuffer);
     glBindTexture(GL_TEXTURE_2D, colorTexBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, 640, 480, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexBuffer, 0); // attachment
 
     // texture buffer object to be used for depth buffer
-    GLuint depthBuffer = 0;
     glGenTextures(1, &depthBuffer);
     glBindTexture(GL_TEXTURE_2D, depthBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, 640, 480, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0); // attachment
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!= GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-    //glBindFramebuffer(GL_FRAMEBUFFER, 0);
 }
 
 
-void render(GLFWwindow* window) {
-    //glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-    int width, height;
+void render(GLFWwindow* window) 
+{
+    // 1. draw on framebuffer object
+    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+
     glfwGetFramebufferSize(window, &width, &height);
     glViewport(0, 0, width, height);
     glClearColor(0.1, 0.1, 0.1, 0);
     glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
 
-
     glUseProgram(program.programID);
 
     vec3 initialCameraPosition = vec3(0, 0, cameraDistance);         // 초기 카메라 위치
     mat4 cameraRotationMatrix1 = rotate(cameraPhi, vec3(1, 0, 0));   // 수평 회전 행렬
     mat4 cameraRotationMatrix2 = rotate(cameraTheta, vec3(0, 1, 0)); // 수직 회전 행렬
-
     vec3 cameraPosition = cameraRotationMatrix2 * cameraRotationMatrix1 * vec4(initialCameraPosition, 1);
 
     mat4 viewMat = glm::lookAt(cameraPosition, vec3(0, 0, 0), vec3(0, 1, 0));    // 뷰행렬
     mat4 projMat = glm::perspective(fovy, width / (float)height, 0.01f, 1000.f); // 투영행렬
+
 
     GLuint modelMatLocation = glGetUniformLocation(program.programID, "modelMat");
     glUniformMatrix4fv(modelMatLocation, 1, 0, value_ptr(mat4(1)));
@@ -195,7 +221,6 @@ void render(GLFWwindow* window) {
     glUniform3fv(ambientLightLocation, 1, value_ptr(ambientLight));
 
 
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, diffTex);
     GLuint diffTexLocation = glGetUniformLocation(program.programID, "diffTex");
@@ -221,6 +246,31 @@ void render(GLFWwindow* window) {
     glDrawElements(GL_TRIANGLES, triangles.size()*3, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
+
+    // 2. draw on default framebuffer (quad plane with the attached framebuffer color texture)
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+    glClearColor(0.1, 0.1, 0.1, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(screenProgram.programID);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, colorTexBuffer);
+    GLuint colorTexLocation = glGetUniformLocation(screenProgram.programID, "colorTex");
+    glUniform1i(colorTexLocation, 0);
+    
+    GLuint widthLocation = glGetUniformLocation(screenProgram.programID, "width");
+    glUniform1i(widthLocation, width);
+
+    GLuint heightLocation = glGetUniformLocation(screenProgram.programID, "height");
+    glUniform1i(heightLocation, height);
+
+    glBindVertexArray(quadArrrayBuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 GLuint loadTextureMap(const char* filename)
