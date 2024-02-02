@@ -24,14 +24,13 @@ void init();
 
 GLuint loadTextureMap(const char* filename);
 
-int width = 640;
-int height = 480;
+vec2 windowSize = { 640, 480 };
 
 int main(void) 
 {
     if (!glfwInit()) exit(EXIT_FAILURE);                                    // glfw 핵심 객체 초기화
     glfwWindowHint(GLFW_SAMPLES, 8);                                        // 생성할 Window의 기본 설정
-    GLFWwindow* window = glfwCreateWindow(width, height, "Hello", NULL, NULL);   // 창 객체 생성
+    GLFWwindow* window = glfwCreateWindow(windowSize.x, windowSize.y, "Hello", NULL, NULL);   // 창 객체 생성
 
     glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetScrollCallback(window, scrollCallback);
@@ -153,7 +152,7 @@ void init() {
     // texture buffer object to be used for colorbuffer
     glGenTextures(1, &colorTexBuffer);
     glBindTexture(GL_TEXTURE_2D, colorTexBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, width, height, 0, GL_RGB, GL_UNSIGNED_BYTE, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, windowSize.x, windowSize.y, 0, GL_RGB, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexBuffer, 0); // attachment
@@ -161,7 +160,7 @@ void init() {
     // texture buffer object to be used for depth buffer
     glGenTextures(1, &depthBuffer);
     glBindTexture(GL_TEXTURE_2D, depthBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, width, height, 0, GL_DEPTH_COMPONENT, GL_UNSIGNED_BYTE, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, windowSize.x, windowSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0); // attachment
@@ -175,9 +174,9 @@ void render(GLFWwindow* window)
 {
     // 1. draw on framebuffer object
     glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
-
-    glfwGetFramebufferSize(window, &width, &height);
-    glViewport(0, 0, width, height);
+    ivec2 nowSize;
+    glfwGetFramebufferSize(window, &nowSize.x, &nowSize.y);
+    glViewport(0, 0, windowSize.x, windowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
     glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
@@ -190,7 +189,7 @@ void render(GLFWwindow* window)
     vec3 cameraPosition = cameraRotationMatrix2 * cameraRotationMatrix1 * vec4(initialCameraPosition, 1);
 
     mat4 viewMat = glm::lookAt(cameraPosition, vec3(0, 0, 0), vec3(0, 1, 0));    // 뷰행렬
-    mat4 projMat = glm::perspective(fovy, width / (float)height, 0.01f, 1000.f); // 투영행렬
+    mat4 projMat = glm::perspective(fovy, windowSize.x / (float)windowSize.y, 0.01f, 1000.f); // 투영행렬
 
 
     GLuint modelMatLocation = glGetUniformLocation(program.programID, "modelMat");
@@ -249,7 +248,7 @@ void render(GLFWwindow* window)
 
     // 2. draw on default framebuffer (quad plane with the attached framebuffer color texture)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
-
+    glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -259,12 +258,15 @@ void render(GLFWwindow* window)
     glBindTexture(GL_TEXTURE_2D, colorTexBuffer);
     GLuint colorTexLocation = glGetUniformLocation(screenProgram.programID, "colorTex");
     glUniform1i(colorTexLocation, 0);
-    
-    GLuint widthLocation = glGetUniformLocation(screenProgram.programID, "width");
-    glUniform1i(widthLocation, width);
 
-    GLuint heightLocation = glGetUniformLocation(screenProgram.programID, "height");
-    glUniform1i(heightLocation, height);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, depthBuffer);
+    GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
+    glUniform1i(depthTexLocation, 1);
+    
+    GLuint sizeLocation = glGetUniformLocation(screenProgram.programID, "size");
+    glUniform2iv(sizeLocation, 1, value_ptr(nowSize));
+
 
     glBindVertexArray(quadArrrayBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);

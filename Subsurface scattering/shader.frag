@@ -23,8 +23,6 @@ out vec4 out_Color;
 
 const float PI = 3.14159265358979f;
 
-#define TEX_DELTA 0.0001
-
 
 
 float V_SmithGGXCorrelated(float NoV, float NoL, float roughness) {
@@ -77,7 +75,6 @@ void main(void)
 	float LoH = clamp(dot(l, h), 0.0, 1.0);
 	
 
-	// BRDF
 	vec3 f0 = vec3(0.028, 0.028, 0.028); // 'skin' specular reflectance at normal incidnece angle
 	float roughness = texture(roughTex, texCoords).r;
 	roughness *= roughness; // remapping roughness (alpha)
