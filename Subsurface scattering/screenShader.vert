@@ -5,8 +5,7 @@
 #version 410 core
 
 layout(location=0) in vec3 in_Position;
-
-
+out vec2 texCoords;
 
 void main(void)
 {

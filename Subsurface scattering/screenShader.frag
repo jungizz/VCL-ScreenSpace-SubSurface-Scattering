@@ -6,8 +6,8 @@
 
 uniform sampler2D colorTex;
 uniform sampler2D depthTex;
-
 uniform vec2 size;
+
 out vec4 out_Color;
 
 

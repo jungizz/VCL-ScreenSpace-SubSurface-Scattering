@@ -58,13 +58,13 @@ GLuint elementBuffer = 0;
 GLuint quadVertexBuffer = 0;
 GLuint quadArrrayBuffer = 0;
 float quadVertices[] = { // 화면 전체에 렌더링하기 위한 사각형 정점 데이터
-    -1.0f,  1.0f, 0.0f,  // 왼쪽 상단
-    -1.0f, -1.0f, 0.0f,  // 왼쪽 하단
-     1.0f, -1.0f, 0.0f,  // 오른쪽 하단
+    -1.0f,  1.0f, 0.0f,// 왼쪽 상단
+    -1.0f, -1.0f, 0.0f,// 왼쪽 하단
+     1.0f, -1.0f, 0.0f,// 오른쪽 하단
 
-    -1.0f,  1.0f, 0.0f,  // 왼쪽 상단
-     1.0f, -1.0f, 0.0f,  // 오른쪽 하단
-     1.0f,  1.0f, 0.0f   // 오른쪽 상단
+    -1.0f,  1.0f, 0.0f,// 왼쪽 상단
+     1.0f, -1.0f, 0.0f,// 오른쪽 하단
+     1.0f,  1.0f, 0.0f,// 오른쪽 상단
 };
 
 // Framebuffer Object structure
@@ -212,7 +212,7 @@ void render(GLFWwindow* window)
     glViewport(0, 0, windowSize.x, windowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
     glEnable(GL_DEPTH_TEST);
-    glClear(GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(program.programID);
 
@@ -275,7 +275,7 @@ void render(GLFWwindow* window)
 
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-    glDrawElements(GL_TRIANGLES, triangles.size()*3, GL_UNSIGNED_INT, 0);
+    glDrawElements(GL_TRIANGLES, triangles.size() * 3, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
 
 
@@ -300,7 +300,7 @@ void render(GLFWwindow* window)
     glBindVertexArray(quadArrrayBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
-    
+
 
     // 3. draw on default framebuffer (quad plane with the attached framebuffer color texture)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -320,7 +320,7 @@ void render(GLFWwindow* window)
     glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
     GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
     glUniform1i(depthTexLocation, 1);
-    
+
     sizeLocation = glGetUniformLocation(screenProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
 
