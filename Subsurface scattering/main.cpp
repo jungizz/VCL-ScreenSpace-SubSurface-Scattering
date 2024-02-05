@@ -67,12 +67,19 @@ float quadVertices[] = { // 화면 전체에 렌더링하기 위한 사각형 �
      1.0f,  1.0f, 0.0f   // 오른쪽 상단
 };
 
-GLuint frameBuffer = 0;
-GLuint colorTexBuffer = 0;
-GLuint depthBuffer = 0;
+// Framebuffer Object structure
+struct FBO {
+    GLuint frameBuffer = 0;
+    GLuint colorTexBuffer = 0;
+    GLuint depthBuffer = 0;
+};
+
+FBO baseFBO;
+FBO gaussianFBO;
 
 Program program;
 Program screenProgram;
+Program gaussianProgram;
 
 GLuint diffTex = 0; // duffuse map ID
 GLuint normTex = 0; // normal map ID
@@ -92,6 +99,7 @@ void init() {
     }
     program.loadShaders("shader.vert", "shader.frag");
     screenProgram.loadShaders("screenShader.vert", "screenShader.frag");
+    gaussianProgram.loadShaders("gaussianBlur.vert", "gaussianBlur.frag");
 
     // Vertex Buffer Object (VBO)
     glGenBuffers(1, &vertexBuffer); // 버퍼 1개 생성
@@ -145,35 +153,60 @@ void init() {
     glVertexAttribPointer(0, 3, GL_FLOAT, 0, 0, 0);
 
 
-    // Frame Buffer Object (FBO)
-    glGenFramebuffers(1, &frameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    // base Frame Buffer Object (FBO)
+    glGenFramebuffers(1, &baseFBO.frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, baseFBO.frameBuffer);
     
     // texture buffer object to be used for colorbuffer
-    glGenTextures(1, &colorTexBuffer);
-    glBindTexture(GL_TEXTURE_2D, colorTexBuffer);
+    glGenTextures(1, &baseFBO.colorTexBuffer);
+    glBindTexture(GL_TEXTURE_2D, baseFBO.colorTexBuffer);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, windowSize.x, windowSize.y, 0, GL_RGB, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, colorTexBuffer, 0); // attachment
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, baseFBO.colorTexBuffer, 0); // attachment
 
     // texture buffer object to be used for depth buffer
-    glGenTextures(1, &depthBuffer);
-    glBindTexture(GL_TEXTURE_2D, depthBuffer);
+    glGenTextures(1, &baseFBO.depthBuffer);
+    glBindTexture(GL_TEXTURE_2D, baseFBO.depthBuffer);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, windowSize.x, windowSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, depthBuffer, 0); // attachment
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, baseFBO.depthBuffer, 0); // attachment
 
     if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!= GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
+
+    // gaussian Frame Buffer Object
+    glGenFramebuffers(1, &gaussianFBO.frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
+
+    // texture buffer object to be used for colorbuffer
+    glGenTextures(1, &gaussianFBO.colorTexBuffer);
+    glBindTexture(GL_TEXTURE_2D, gaussianFBO.colorTexBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, windowSize.x, windowSize.y, 0, GL_RGB, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gaussianFBO.colorTexBuffer, 0); // attachment
+
+    // texture buffer object to be used for depth buffer
+    glGenTextures(1, &gaussianFBO.depthBuffer);
+    glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, windowSize.x, windowSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gaussianFBO.depthBuffer, 0); // attachment
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
+
 }
 
 
 void render(GLFWwindow* window) 
 {
     // 1. draw on framebuffer object
-    glBindFramebuffer(GL_FRAMEBUFFER, frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, baseFBO.frameBuffer);
     ivec2 nowSize;
     glfwGetFramebufferSize(window, &nowSize.x, &nowSize.y);
     glViewport(0, 0, windowSize.x, windowSize.y);
@@ -246,7 +279,30 @@ void render(GLFWwindow* window)
     glBindVertexArray(0);
 
 
-    // 2. draw on default framebuffer (quad plane with the attached framebuffer color texture)
+    // 2. draw on gaussianFBO
+    glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
+    glViewport(0, 0, nowSize.x, nowSize.y);
+    glClearColor(0.1, 0.1, 0.1, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(gaussianProgram.programID);
+
+    // baseFBO에 있는 텍스처 사용해서 가우시안 하기 위해 보내기
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, baseFBO.colorTexBuffer);
+    GLuint colorTexLocation = glGetUniformLocation(gaussianProgram.programID, "colorTex");
+    glUniform1i(colorTexLocation, 0);
+
+    GLuint sizeLocation = glGetUniformLocation(gaussianProgram.programID, "size");
+    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
+
+    // Draw a quad to apply Gaussian blur
+    glBindVertexArray(quadArrrayBuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+    
+
+    // 3. draw on default framebuffer (quad plane with the attached framebuffer color texture)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
@@ -254,20 +310,21 @@ void render(GLFWwindow* window)
 
     glUseProgram(screenProgram.programID);
 
+    // gaussianFBO에 그린 텍스처(가우시안 된 상태) 그리기 위해 보내기
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, colorTexBuffer);
-    GLuint colorTexLocation = glGetUniformLocation(screenProgram.programID, "colorTex");
-    glUniform1i(colorTexLocation, 0);
+    glBindTexture(GL_TEXTURE_2D, gaussianFBO.colorTexBuffer);
+    GLuint blurTexLocation = glGetUniformLocation(screenProgram.programID, "colorTex");
+    glUniform1i(blurTexLocation, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, depthBuffer);
+    glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
     GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
     glUniform1i(depthTexLocation, 1);
     
-    GLuint sizeLocation = glGetUniformLocation(screenProgram.programID, "size");
-    glUniform2iv(sizeLocation, 1, value_ptr(nowSize));
+    sizeLocation = glGetUniformLocation(screenProgram.programID, "size");
+    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
 
-
+    // Draw a quad to display the final result
     glBindVertexArray(quadArrrayBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);

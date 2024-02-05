@@ -11,6 +11,7 @@ layout(location=2) in vec2 in_TexCoords;
 uniform mat4 modelMat;
 uniform mat4 viewMat;
 uniform mat4 projMat;
+
 out vec3 normal;
 out vec3 worldPosition;
 out vec2 texCoords;
