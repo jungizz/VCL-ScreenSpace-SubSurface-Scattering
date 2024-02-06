@@ -92,7 +92,7 @@ vec3 ambientLight = vec3(0.0);
 
 
 void init() {
-    if (!loadObj("LPS_Head.obj")) {
+    if (!loadObj("resources/LPS_Head.obj")) {
         std::cerr << "Failed to load the model!" << std::endl;
         glfwTerminate();
         exit(EXIT_FAILURE);
@@ -137,10 +137,10 @@ void init() {
 
 
     // Texture
-    diffTex= loadTextureMap("LPS_lambertian.jpg");
-    normTex = loadTextureMap("LPS_NormalMap.png");
-    roughTex = loadTextureMap("LPS_Roughness.png");
-    specAOTex = loadTextureMap("LPS_SpecularAO.png");
+    diffTex= loadTextureMap("resources/LPS_lambertian.jpg");
+    normTex = loadTextureMap("resources/LPS_NormalMap.png");
+    roughTex = loadTextureMap("resources/LPS_Roughness.png");
+    specAOTex = loadTextureMap("resources/LPS_SpecularAO.png");
 
 
     // screen quad VAO
@@ -293,6 +293,11 @@ void render(GLFWwindow* window)
     GLuint colorTexLocation = glGetUniformLocation(gaussianProgram.programID, "colorTex");
     glUniform1i(colorTexLocation, 0);
 
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, baseFBO.depthBuffer);
+    GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
+    glUniform1i(depthTexLocation, 1);
+
     GLuint sizeLocation = glGetUniformLocation(gaussianProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
 
@@ -316,10 +321,10 @@ void render(GLFWwindow* window)
     GLuint blurTexLocation = glGetUniformLocation(screenProgram.programID, "colorTex");
     glUniform1i(blurTexLocation, 0);
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
-    GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
-    glUniform1i(depthTexLocation, 1);
+    //glActiveTexture(GL_TEXTURE1);
+    //glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
+    //GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
+    //glUniform1i(depthTexLocation, 1);
 
     sizeLocation = glGetUniformLocation(screenProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
