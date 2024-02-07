@@ -15,11 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="main.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
     <None Include="shader.frag">
       <Filter>소스 파일</Filter>
     </None>
@@ -32,15 +27,30 @@
     <None Include="screenShader.vert">
       <Filter>소스 파일</Filter>
     </None>
-    <None Include="gaussianBlur.frag" />
-    <None Include="gaussianBlur.vert" />
+    <None Include="gaussianBlur.frag">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="gaussianBlur.vert">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="depthShader.frag">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="depthShader.vert">
+      <Filter>소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="objLoader.h">
-      <Filter>소스 파일</Filter>
-    </ClInclude>
     <ClInclude Include="moveCam.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
+    <ClInclude Include="objLoader.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="main.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

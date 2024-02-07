@@ -10,7 +10,6 @@ uniform vec2 size;
 
 out vec4 out_Color;
 
-
 const int kernelSize = 11;
 const float sigma = 3.0;
 

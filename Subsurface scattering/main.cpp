@@ -19,10 +19,18 @@
 
 using namespace glm;
 
+// Framebuffer Object structure
+struct FBO {
+    GLuint frameBuffer = 0;
+    GLuint colorTexBuffer = 0;
+    GLuint depthBuffer = 0;
+};
+
 void render(GLFWwindow* window);
 void init();
 
 GLuint loadTextureMap(const char* filename);
+void attachBuffers(FBO* fbo); 
 
 vec2 windowSize = { 640, 480 };
 
@@ -67,19 +75,15 @@ float quadVertices[] = { // 화면 전체에 렌더링하기 위한 사각형 �
      1.0f,  1.0f, 0.0f,// 오른쪽 상단
 };
 
-// Framebuffer Object structure
-struct FBO {
-    GLuint frameBuffer = 0;
-    GLuint colorTexBuffer = 0;
-    GLuint depthBuffer = 0;
-};
 
 FBO baseFBO;
 FBO gaussianFBO;
+FBO depthFBO;
 
 Program program;
 Program screenProgram;
 Program gaussianProgram;
+Program depthProgram;
 
 GLuint diffTex = 0; // duffuse map ID
 GLuint normTex = 0; // normal map ID
@@ -100,6 +104,7 @@ void init() {
     program.loadShaders("shader.vert", "shader.frag");
     screenProgram.loadShaders("screenShader.vert", "screenShader.frag");
     gaussianProgram.loadShaders("gaussianBlur.vert", "gaussianBlur.frag");
+    depthProgram.loadShaders("depthShader.vert", "depthShader.frag");
 
     // Vertex Buffer Object (VBO)
     glGenBuffers(1, &vertexBuffer); // 버퍼 1개 생성
@@ -153,53 +158,20 @@ void init() {
     glVertexAttribPointer(0, 3, GL_FLOAT, 0, 0, 0);
 
 
-    // base Frame Buffer Object (FBO)
+    // base Frame Buffer Object
     glGenFramebuffers(1, &baseFBO.frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, baseFBO.frameBuffer);
-    
-    // texture buffer object to be used for colorbuffer
-    glGenTextures(1, &baseFBO.colorTexBuffer);
-    glBindTexture(GL_TEXTURE_2D, baseFBO.colorTexBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, windowSize.x, windowSize.y, 0, GL_RGB, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, baseFBO.colorTexBuffer, 0); // attachment
+    attachBuffers(&baseFBO);
 
-    // texture buffer object to be used for depth buffer
-    glGenTextures(1, &baseFBO.depthBuffer);
-    glBindTexture(GL_TEXTURE_2D, baseFBO.depthBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, windowSize.x, windowSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, baseFBO.depthBuffer, 0); // attachment
-
-    if(glCheckFramebufferStatus(GL_FRAMEBUFFER)!= GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-
-
-    // gaussian Frame Buffer Object
+    // gaussian Frame Buffer Object 
     glGenFramebuffers(1, &gaussianFBO.frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
+    attachBuffers(&gaussianFBO);
 
-    // texture buffer object to be used for colorbuffer
-    glGenTextures(1, &gaussianFBO.colorTexBuffer);
-    glBindTexture(GL_TEXTURE_2D, gaussianFBO.colorTexBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, windowSize.x, windowSize.y, 0, GL_RGB, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, gaussianFBO.colorTexBuffer, 0); // attachment
-
-    // texture buffer object to be used for depth buffer
-    glGenTextures(1, &gaussianFBO.depthBuffer);
-    glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, windowSize.x, windowSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, gaussianFBO.depthBuffer, 0); // attachment
-
-    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
-        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
-
+    // depth Frame Buffer Object 
+    glGenFramebuffers(1, &depthFBO.frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, depthFBO.frameBuffer);
+    attachBuffers(&depthFBO);
 }
 
 
@@ -279,7 +251,7 @@ void render(GLFWwindow* window)
     glBindVertexArray(0);
 
 
-    // 2. draw on gaussianFBO
+    // 2-1. draw on gaussianFBO
     glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
     glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
@@ -293,10 +265,10 @@ void render(GLFWwindow* window)
     GLuint colorTexLocation = glGetUniformLocation(gaussianProgram.programID, "colorTex");
     glUniform1i(colorTexLocation, 0);
 
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, baseFBO.depthBuffer);
-    GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
-    glUniform1i(depthTexLocation, 1);
+    //glActiveTexture(GL_TEXTURE1);
+    //glBindTexture(GL_TEXTURE_2D, baseFBO.depthBuffer);
+    //GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
+    //glUniform1i(depthTexLocation, 1);
 
     GLuint sizeLocation = glGetUniformLocation(gaussianProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
@@ -305,6 +277,30 @@ void render(GLFWwindow* window)
     glBindVertexArray(quadArrrayBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
+
+
+    // 2-2. draw on depthFBO
+    glBindFramebuffer(GL_FRAMEBUFFER, depthFBO.frameBuffer);
+    glViewport(0, 0, nowSize.x, nowSize.y);
+    glClearColor(0.1, 0.1, 0.1, 0);
+    glClear(GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(depthProgram.programID);
+
+    // MVP(model view transform projection) matrix from the light's point of view
+    mat4 shadowProjMat = ortho(-2, 2, -2, 2);
+    mat4 shadowViewMat = lookAt(lightPosition, vec3(0, 0, 0), vec3(0, 1, 0));
+    mat4 shadowMVP = shadowProjMat * shadowViewMat * mat4(1);
+
+    GLuint shadowMVPLocation = glGetUniformLocation(depthProgram.programID, "shadowMVP");
+    glUniformMatrix4fv(shadowMVPLocation, 1, 0, value_ptr(shadowMVP));
+
+    // Draw a model 
+    glBindVertexArray(vertexArray);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    glDrawElements(GL_TRIANGLES, triangles.size() * 3, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
 
 
     // 3. draw on default framebuffer (quad plane with the attached framebuffer color texture)
@@ -321,10 +317,10 @@ void render(GLFWwindow* window)
     GLuint blurTexLocation = glGetUniformLocation(screenProgram.programID, "colorTex");
     glUniform1i(blurTexLocation, 0);
 
-    //glActiveTexture(GL_TEXTURE1);
-    //glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
-    //GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
-    //glUniform1i(depthTexLocation, 1);
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, depthFBO.depthBuffer);
+    GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
+    glUniform1i(depthTexLocation, 1);
 
     sizeLocation = glGetUniformLocation(screenProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
@@ -352,4 +348,26 @@ GLuint loadTextureMap(const char* filename)
     glGenerateMipmap(GL_TEXTURE_2D);
     stbi_image_free(buf);
     return texID;
+}
+
+void attachBuffers(FBO* fbo) 
+{
+    // texture buffer object to be used for colorbuffer
+    glGenTextures(1, &fbo->colorTexBuffer);
+    glBindTexture(GL_TEXTURE_2D, fbo->colorTexBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, windowSize.x, windowSize.y, 0, GL_RGB, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo->colorTexBuffer, 0); // attachment
+
+    // texture buffer object to be used for depth buffer
+    glGenTextures(1, &fbo->depthBuffer);
+    glBindTexture(GL_TEXTURE_2D, fbo->depthBuffer);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, windowSize.x, windowSize.y, 0, GL_DEPTH_COMPONENT, GL_FLOAT, NULL); // image data를 load하여 연결할 필요 없으므로 마지막 인자에 NULL
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glFramebufferTexture2D(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D, fbo->depthBuffer, 0); // attachment
+
+    if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
+        std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 }
