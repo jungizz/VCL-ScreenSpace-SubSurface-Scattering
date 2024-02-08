@@ -135,14 +135,16 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="diffuseShader.frag" />
-    <None Include="diffuseShader.vert" />
+    <None Include="diffShader.frag" />
+    <None Include="diffShader.vert" />
     <None Include="gaussianBlur.frag" />
     <None Include="gaussianBlur.vert" />
     <None Include="screenShader.frag" />
     <None Include="screenShader.vert" />
     <None Include="shader.frag" />
     <None Include="shader.vert" />
+    <None Include="specShader.frag" />
+    <None Include="specShader.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="moveCam.h" />

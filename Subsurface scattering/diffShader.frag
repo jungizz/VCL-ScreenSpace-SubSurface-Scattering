@@ -59,12 +59,11 @@ void main(void)
 
 	// diffuse BRDF
 	vec4 diffColor = vec4(1); // color는 diffuse texture가 아닌 vec4(1) 사용
-	diffColor.rgb = pow(diffColor.rgb, vec3(2.2)); // gamma correction (to linear space)
 	vec3 Fd = diffColor.rgb * Fd_Lambert();
 	
 	//vec4 spec = texture(specAOTex, texCoords);
 
 	// final
 	vec3 c = Fd * (lightColor/dot(L, L)) * NoL;
-	out_Color = vec4(c, diffColor.a);
+	out_Color = vec4(c, 1);
 }
