@@ -76,10 +76,11 @@ float quadVertices[] = { // 화면 전체에 렌더링하기 위한 사각형 �
 };
 
 
-FBO baseFBO;
+FBO diffFBO;
 FBO gaussianFBO;
 
-Program program;
+Program diffProgram;
+Program specProgram;
 Program screenProgram;
 Program gaussianProgram;
 
@@ -99,7 +100,7 @@ void init() {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
-    program.loadShaders("diffuseShader.vert", "diffuseShader.frag");
+    diffProgram.loadShaders("diffuseShader.vert", "diffuseShader.frag");
     screenProgram.loadShaders("screenShader.vert", "screenShader.frag");
     gaussianProgram.loadShaders("gaussianBlur.vert", "gaussianBlur.frag");
 
@@ -155,10 +156,10 @@ void init() {
     glVertexAttribPointer(0, 3, GL_FLOAT, 0, 0, 0);
 
 
-    // base Frame Buffer Object
-    glGenFramebuffers(1, &baseFBO.frameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, baseFBO.frameBuffer);
-    attachBuffers(&baseFBO);
+    // diffuse Frame Buffer Object
+    glGenFramebuffers(1, &diffFBO.frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, diffFBO.frameBuffer);
+    attachBuffers(&diffFBO);
 
     // gaussian Frame Buffer Object 
     glGenFramebuffers(1, &gaussianFBO.frameBuffer);
@@ -170,7 +171,7 @@ void init() {
 void render(GLFWwindow* window) 
 {
     // 1. draw on framebuffer object
-    glBindFramebuffer(GL_FRAMEBUFFER, baseFBO.frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, diffFBO.frameBuffer);
     ivec2 nowSize;
     glfwGetFramebufferSize(window, &nowSize.x, &nowSize.y);
     glViewport(0, 0, windowSize.x, windowSize.y);
@@ -178,7 +179,7 @@ void render(GLFWwindow* window)
     glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    glUseProgram(program.programID);
+    glUseProgram(diffProgram.programID);
 
     vec3 initialCameraPosition = vec3(0, 0, cameraDistance);         // 초기 카메라 위치
     mat4 cameraRotationMatrix1 = rotate(cameraPhi, vec3(1, 0, 0));   // 수평 회전 행렬
@@ -189,16 +190,16 @@ void render(GLFWwindow* window)
     mat4 projMat = glm::perspective(fovy, windowSize.x / (float)windowSize.y, 0.01f, 1000.f); // 투영행렬
 
 
-    GLuint modelMatLocation = glGetUniformLocation(program.programID, "modelMat");
+    GLuint modelMatLocation = glGetUniformLocation(diffProgram.programID, "modelMat");
     glUniformMatrix4fv(modelMatLocation, 1, 0, value_ptr(mat4(1)));
 
-    GLuint viewMatLocation = glGetUniformLocation(program.programID, "viewMat");
+    GLuint viewMatLocation = glGetUniformLocation(diffProgram.programID, "viewMat");
     glUniformMatrix4fv(viewMatLocation, 1, 0, value_ptr(viewMat));
 
-    GLuint projMatLocation = glGetUniformLocation(program.programID, "projMat");
+    GLuint projMatLocation = glGetUniformLocation(diffProgram.programID, "projMat");
     glUniformMatrix4fv(projMatLocation, 1, 0, value_ptr(projMat));
 
-    GLuint cameraPositionLocation = glGetUniformLocation(program.programID, "cameraPosition");
+    GLuint cameraPositionLocation = glGetUniformLocation(diffProgram.programID, "cameraPosition");
     glUniform3fv(cameraPositionLocation, 1, value_ptr(cameraPosition));
 
     /*GLuint colorLocation = glGetUniformLocation(program.programID, "color");
@@ -207,34 +208,34 @@ void render(GLFWwindow* window)
     GLuint shininessLocation = glGetUniformLocation(program.programID, "shininess");
     glUniform1f(shininessLocation, shininess[0]);*/
 
-    GLuint lightPositionLocation = glGetUniformLocation(program.programID, "lightPosition");
+    GLuint lightPositionLocation = glGetUniformLocation(diffProgram.programID, "lightPosition");
     glUniform3fv(lightPositionLocation, 1, value_ptr(lightPosition));
 
-    GLuint lightColorLocation = glGetUniformLocation(program.programID, "lightColor");
+    GLuint lightColorLocation = glGetUniformLocation(diffProgram.programID, "lightColor");
     glUniform3fv(lightColorLocation, 1, value_ptr(lightColor));
 
-    GLuint ambientLightLocation = glGetUniformLocation(program.programID, "ambientLight");
+    GLuint ambientLightLocation = glGetUniformLocation(diffProgram.programID, "ambientLight");
     glUniform3fv(ambientLightLocation, 1, value_ptr(ambientLight));
 
 
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, diffTex);
-    GLuint diffTexLocation = glGetUniformLocation(program.programID, "diffTex");
+    GLuint diffTexLocation = glGetUniformLocation(diffProgram.programID, "diffTex");
     glUniform1i(diffTexLocation, 0);
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, normTex);
-    GLuint normTexLocation = glGetUniformLocation(program.programID, "normTex");
+    GLuint normTexLocation = glGetUniformLocation(diffProgram.programID, "normTex");
     glUniform1i(normTexLocation, 1);
 
     glActiveTexture(GL_TEXTURE2);
     glBindTexture(GL_TEXTURE_2D, roughTex);
-    GLuint roughTexLocation = glGetUniformLocation(program.programID, "roughTex");
+    GLuint roughTexLocation = glGetUniformLocation(diffProgram.programID, "roughTex");
     glUniform1i(roughTexLocation, 2);
 
     glActiveTexture(GL_TEXTURE3);
     glBindTexture(GL_TEXTURE_2D, specAOTex);
-    GLuint specTexLocation = glGetUniformLocation(program.programID, "specAOTex");
+    GLuint specTexLocation = glGetUniformLocation(diffProgram.programID, "specAOTex");
     glUniform1i(specTexLocation, 3);
 
     glBindVertexArray(vertexArray);
@@ -251,14 +252,14 @@ void render(GLFWwindow* window)
 
     glUseProgram(gaussianProgram.programID);
 
-    // baseFBO에 있는 텍스처 사용해서 가우시안 하기 위해 보내기
+    // diffFBO에 있는 텍스처 사용해서 가우시안 하기 위해 보내기
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, baseFBO.colorTexBuffer);
+    glBindTexture(GL_TEXTURE_2D, diffFBO.colorTexBuffer);
     GLuint colorTexLocation = glGetUniformLocation(gaussianProgram.programID, "colorTex");
     glUniform1i(colorTexLocation, 0);
 
     //glActiveTexture(GL_TEXTURE1);
-    //glBindTexture(GL_TEXTURE_2D, baseFBO.depthBuffer);
+    //glBindTexture(GL_TEXTURE_2D, diffFBO.depthBuffer);
     //GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
     //glUniform1i(depthTexLocation, 1);
 
