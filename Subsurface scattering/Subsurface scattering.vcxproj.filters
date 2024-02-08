@@ -33,10 +33,10 @@
     <None Include="gaussianBlur.vert">
       <Filter>소스 파일</Filter>
     </None>
-    <None Include="depthShader.frag">
+    <None Include="diffuseShader.frag">
       <Filter>소스 파일</Filter>
     </None>
-    <None Include="depthShader.vert">
+    <None Include="diffuseShader.vert">
       <Filter>소스 파일</Filter>
     </None>
   </ItemGroup>

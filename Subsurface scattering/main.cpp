@@ -78,12 +78,10 @@ float quadVertices[] = { // 화면 전체에 렌더링하기 위한 사각형 �
 
 FBO baseFBO;
 FBO gaussianFBO;
-FBO depthFBO;
 
 Program program;
 Program screenProgram;
 Program gaussianProgram;
-Program depthProgram;
 
 GLuint diffTex = 0; // duffuse map ID
 GLuint normTex = 0; // normal map ID
@@ -101,10 +99,9 @@ void init() {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
-    program.loadShaders("shader.vert", "shader.frag");
+    program.loadShaders("diffuseShader.vert", "diffuseShader.frag");
     screenProgram.loadShaders("screenShader.vert", "screenShader.frag");
     gaussianProgram.loadShaders("gaussianBlur.vert", "gaussianBlur.frag");
-    depthProgram.loadShaders("depthShader.vert", "depthShader.frag");
 
     // Vertex Buffer Object (VBO)
     glGenBuffers(1, &vertexBuffer); // 버퍼 1개 생성
@@ -167,11 +164,6 @@ void init() {
     glGenFramebuffers(1, &gaussianFBO.frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
     attachBuffers(&gaussianFBO);
-
-    // depth Frame Buffer Object 
-    glGenFramebuffers(1, &depthFBO.frameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, depthFBO.frameBuffer);
-    attachBuffers(&depthFBO);
 }
 
 
@@ -251,7 +243,7 @@ void render(GLFWwindow* window)
     glBindVertexArray(0);
 
 
-    // 2-1. draw on gaussianFBO
+    // 2. draw on gaussianFBO
     glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
     glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
@@ -279,29 +271,6 @@ void render(GLFWwindow* window)
     glBindVertexArray(0);
 
 
-    // 2-2. draw on depthFBO
-    glBindFramebuffer(GL_FRAMEBUFFER, depthFBO.frameBuffer);
-    glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0.1, 0.1, 0.1, 0);
-    glClear(GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(depthProgram.programID);
-
-    // MVP(model view transform projection) matrix from the light's point of view
-    mat4 shadowProjMat = ortho(-2, 2, -2, 2);
-    mat4 shadowViewMat = lookAt(lightPosition, vec3(0, 0, 0), vec3(0, 1, 0));
-    mat4 shadowMVP = shadowProjMat * shadowViewMat * mat4(1);
-
-    GLuint shadowMVPLocation = glGetUniformLocation(depthProgram.programID, "shadowMVP");
-    glUniformMatrix4fv(shadowMVPLocation, 1, 0, value_ptr(shadowMVP));
-
-    // Draw a model 
-    glBindVertexArray(vertexArray);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
-    glDrawElements(GL_TRIANGLES, triangles.size() * 3, GL_UNSIGNED_INT, 0);
-    glBindVertexArray(0);
-
-
 
     // 3. draw on default framebuffer (quad plane with the attached framebuffer color texture)
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -318,7 +287,7 @@ void render(GLFWwindow* window)
     glUniform1i(blurTexLocation, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, depthFBO.depthBuffer);
+    glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
     GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
     glUniform1i(depthTexLocation, 1);
 
