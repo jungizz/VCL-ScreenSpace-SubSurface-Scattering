@@ -32,7 +32,7 @@ void init();
 GLuint loadTextureMap(const char* filename);
 void attachBuffers(FBO* fbo); 
 
-vec2 windowSize = { 640, 480 };
+vec2 windowSize = { 1080, 720 };
 
 int main(void) 
 {
@@ -91,7 +91,7 @@ GLuint roughTex = 0; // roughness map ID
 GLuint specAOTex = 0; // specularAO map ID (빨간부분은 specular, 파란부분은 ambient occlusion? 요런느낌)
 
 vec3 lightPosition = vec3(3, 3, 10);
-vec3 lightColor = vec3(200);
+vec3 lightColor = vec3(500);
 vec3 ambientLight = vec3(0.0);
 
 
@@ -242,7 +242,7 @@ void render(GLFWwindow* window)
 
     glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, diffFBO.depthBuffer);
-    GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
+    GLuint depthTexLocation = glGetUniformLocation(gaussianProgram.programID, "depthTex");
     glUniform1i(depthTexLocation, 1);
 
     GLuint sizeLocation = glGetUniformLocation(gaussianProgram.programID, "size");

@@ -10,25 +10,28 @@ uniform vec2 size;
 
 out vec4 out_Color;
 
-vec2 kernel;// 1~15
+vec2 kernel = {15, 15}; 
 const float sigma = 5;
 const float alpha = 11; // glbal SSS level
 const float beta = 800; // how SSS varies with depth gradient
 
+float n = 0.01;   // near
+float f = 1.0; // far 
+
+float LinearizeDepth(float dPri)
+{
+	float d = dPri * 2 - 1; // [0,1] -> [-1, 1]
+	return (2 * n * f) / (n + f + d * (n - f));
+}
+
 void main(void)
 {
-	// depth에 따라 kernel 크기 조절하기 (어케하지~~~ 고민즁)
-	float depth = texture(depthTex, gl_FragCoord.xy / size).r; //0~1 (가까울수록 0)
-
-	//kernel.x = alpha / (depth + beta * abs(dFdx(depth) * depth));
-	//kernel.y = alpha / (depth + beta * abs(dFdy(depth) * depth));
-
-	kernel.x = 15;
-	kernel.y = 15;
+	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // [0,1] (가까울수록 0)
+	float z = LinearizeDepth(depth); // camera coord depth
 
 	vec2 texelSize = 1.0/size;
 	vec3 resColor = vec3(0.0);
-	
+
 	int wx = (int(kernel.x)-1)/2;
 	int wy = (int(kernel.y)-1)/2;
 	
@@ -46,6 +49,6 @@ void main(void)
 	}
 	
 	out_Color = vec4(resColor/wSum, 1.0);
-	//out_Color = texture(colorTex, gl_FragCoord.xy / size);
-	//out_Color = vec4(vec3(texture(depthTex, gl_FragCoord.xy / size).r)/2,1); // depthmap
+	//out_Color = vec4(pow(vec3(z), vec3(4)), 1.0); // camera coord depth test
+	
 }

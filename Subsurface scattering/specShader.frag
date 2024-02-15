@@ -66,7 +66,7 @@ void main(void)
 	float V = V_SmithGGXCorrelated(NoV, NoL, roughness);
 	vec3 F = F_Schlick(LoH, f0);
 
-	vec3 Fr = (D * V) * F;
+	vec3 Fr = (D * V) * F / (NoV * (NoL+1e-5) * 4);
 
 	// diffuse BRDF with gaussian blur
 	vec3 Fd = texture(gaussianDiffTex, gl_FragCoord.xy / size).rgb;
@@ -77,7 +77,7 @@ void main(void)
 
 
 	// final
-	vec3 c = Fd * color.rgb + Fr;
-	//vec3 c = Fr;
-	out_Color = vec4(pow(c, vec3(1/2.2)), 1); // gamma correction (to srgb)
+	vec3 c = Fd * color.rgb + Fr * NoL;
+	//out_Color = vec4(pow(c, vec3(1/2.2)), 1); // gamma correction (to srgb)
+	//out_Color = vec4(Fd, 1);
 }
