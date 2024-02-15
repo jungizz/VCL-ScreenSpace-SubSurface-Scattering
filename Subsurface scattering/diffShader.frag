@@ -10,9 +10,7 @@ uniform vec3 lightColor;
 uniform vec3 ambientLight;
 //uniform float shininess;
 
-uniform sampler2D diffTex;
 uniform sampler2D normTex;
-uniform sampler2D roughTex;
 uniform sampler2D specAOTex;
 
 in vec3 normal;
@@ -48,7 +46,7 @@ void main(void)
 	// normal mapping
 	mat3 TBN = getTBN(n);
 	vec3 normVec = texture(normTex,texCoords).rgb*2-1; // [0, 1] -> [-1, 1]
-	n = normalize(TBN * normVec);;
+	n = normalize(TBN * normVec);
 
 
 	float NoV = abs(dot(n, v)) + 1e-5;

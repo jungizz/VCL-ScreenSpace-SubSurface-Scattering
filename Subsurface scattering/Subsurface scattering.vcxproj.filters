@@ -21,12 +21,6 @@
     <None Include="shader.vert">
       <Filter>소스 파일</Filter>
     </None>
-    <None Include="screenShader.frag">
-      <Filter>소스 파일</Filter>
-    </None>
-    <None Include="screenShader.vert">
-      <Filter>소스 파일</Filter>
-    </None>
     <None Include="gaussianBlur.frag">
       <Filter>소스 파일</Filter>
     </None>

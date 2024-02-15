@@ -91,7 +91,7 @@ GLuint roughTex = 0; // roughness map ID
 GLuint specAOTex = 0; // specularAO map ID (빨간부분은 specular, 파란부분은 ambient occlusion? 요런느낌)
 
 vec3 lightPosition = vec3(3, 3, 10);
-vec3 lightColor = vec3(100);
+vec3 lightColor = vec3(200);
 vec3 ambientLight = vec3(0.0);
 
 
@@ -163,11 +163,6 @@ void init() {
     glBindFramebuffer(GL_FRAMEBUFFER, diffFBO.frameBuffer);
     attachBuffers(&diffFBO);
 
-    // specular Frame Buffer Object
-    glGenFramebuffers(1, &specFBO.frameBuffer);
-    glBindFramebuffer(GL_FRAMEBUFFER, specFBO.frameBuffer);
-    attachBuffers(&specFBO);
-
     // gaussian Frame Buffer Object 
     glGenFramebuffers(1, &gaussianFBO.frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
@@ -181,7 +176,7 @@ void render(GLFWwindow* window)
     glBindFramebuffer(GL_FRAMEBUFFER, diffFBO.frameBuffer);
     ivec2 nowSize;
     glfwGetFramebufferSize(window, &nowSize.x, &nowSize.y);
-    glViewport(0, 0, windowSize.x, windowSize.y);
+    glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
     glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -194,8 +189,7 @@ void render(GLFWwindow* window)
     vec3 cameraPosition = cameraRotationMatrix2 * cameraRotationMatrix1 * vec4(initialCameraPosition, 1);
 
     mat4 viewMat = glm::lookAt(cameraPosition, vec3(0, 0, 0), vec3(0, 1, 0));    // 뷰행렬
-    mat4 projMat = glm::perspective(fovy, windowSize.x / (float)windowSize.y, 0.01f, 1000.f); // 투영행렬
-
+    mat4 projMat = glm::perspective(fovy, nowSize.x / (float)nowSize.y, 0.01f, 1000.f); // 투영행렬
 
     GLuint modelMatLocation = glGetUniformLocation(diffProgram.programID, "modelMat");
     glUniformMatrix4fv(modelMatLocation, 1, 0, value_ptr(mat4(1)));
@@ -209,12 +203,6 @@ void render(GLFWwindow* window)
     GLuint cameraPositionLocation = glGetUniformLocation(diffProgram.programID, "cameraPosition");
     glUniform3fv(cameraPositionLocation, 1, value_ptr(cameraPosition));
 
-    /*GLuint colorLocation = glGetUniformLocation(program.programID, "color");
-    glUniform4fv(colorLocation, 1, value_ptr(diffuseColor[0]));
-
-    GLuint shininessLocation = glGetUniformLocation(program.programID, "shininess");
-    glUniform1f(shininessLocation, shininess[0]);*/
-
     GLuint lightPositionLocation = glGetUniformLocation(diffProgram.programID, "lightPosition");
     glUniform3fv(lightPositionLocation, 1, value_ptr(lightPosition));
 
@@ -224,26 +212,13 @@ void render(GLFWwindow* window)
     GLuint ambientLightLocation = glGetUniformLocation(diffProgram.programID, "ambientLight");
     glUniform3fv(ambientLightLocation, 1, value_ptr(ambientLight));
 
-
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffTex);
-    GLuint diffTexLocation = glGetUniformLocation(diffProgram.programID, "diffTex");
-    glUniform1i(diffTexLocation, 0);
-
-    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, normTex);
     GLuint normTexLocation = glGetUniformLocation(diffProgram.programID, "normTex");
-    glUniform1i(normTexLocation, 1);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, roughTex);
-    GLuint roughTexLocation = glGetUniformLocation(diffProgram.programID, "roughTex");
-    glUniform1i(roughTexLocation, 2);
-
-    glActiveTexture(GL_TEXTURE3);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, specAOTex);
     GLuint specTexLocation = glGetUniformLocation(diffProgram.programID, "specAOTex");
-    glUniform1i(specTexLocation, 3);
+    glUniform1i(specTexLocation, 1);
 
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
@@ -251,9 +226,37 @@ void render(GLFWwindow* window)
     glBindVertexArray(0);
 
 
-    // 2. draw on specular FBO
-    glBindFramebuffer(GL_FRAMEBUFFER, specFBO.frameBuffer);
-    glViewport(0, 0, windowSize.x, windowSize.y);
+    // 2. draw on gaussianFBO
+    glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
+    glViewport(0, 0, nowSize.x, nowSize.y);
+    glClearColor(0.1, 0.1, 0.1, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(gaussianProgram.programID);
+
+    // diffFBO에 있는 텍스처 사용해서 가우시안 하기 위해 보내기
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, diffFBO.colorTexBuffer);
+    GLuint colorTexLocation = glGetUniformLocation(gaussianProgram.programID, "colorTex");
+    glUniform1i(colorTexLocation, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, diffFBO.depthBuffer);
+    GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
+    glUniform1i(depthTexLocation, 1);
+
+    GLuint sizeLocation = glGetUniformLocation(gaussianProgram.programID, "size");
+    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
+
+    // Draw a quad to apply Gaussian blur
+    glBindVertexArray(quadArrrayBuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+
+    // 3. draw on specular FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, 0);
+    glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -271,113 +274,31 @@ void render(GLFWwindow* window)
     cameraPositionLocation = glGetUniformLocation(specProgram.programID, "cameraPosition");
     glUniform3fv(cameraPositionLocation, 1, value_ptr(cameraPosition));
 
-    /*GLuint colorLocation = glGetUniformLocation(program.programID, "color");
-    glUniform4fv(colorLocation, 1, value_ptr(diffuseColor[0]));
-
-    GLuint shininessLocation = glGetUniformLocation(program.programID, "shininess");
-    glUniform1f(shininessLocation, shininess[0]);*/
-
     lightPositionLocation = glGetUniformLocation(specProgram.programID, "lightPosition");
     glUniform3fv(lightPositionLocation, 1, value_ptr(lightPosition));
 
-    lightColorLocation = glGetUniformLocation(specProgram.programID, "lightColor");
-    glUniform3fv(lightColorLocation, 1, value_ptr(lightColor));
-
-    ambientLightLocation = glGetUniformLocation(specProgram.programID, "ambientLight");
-    glUniform3fv(ambientLightLocation, 1, value_ptr(ambientLight));
-
-
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, diffTex);
-    diffTexLocation = glGetUniformLocation(specProgram.programID, "diffTex");
+    GLuint diffTexLocation = glGetUniformLocation(specProgram.programID, "diffTex");
     glUniform1i(diffTexLocation, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, normTex);
-    normTexLocation = glGetUniformLocation(specProgram.programID, "normTex");
-    glUniform1i(normTexLocation, 1);
+    glBindTexture(GL_TEXTURE_2D, roughTex);
+    GLuint roughTexLocation = glGetUniformLocation(specProgram.programID, "roughTex");
+    glUniform1i(roughTexLocation, 1);
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, roughTex);
-    roughTexLocation = glGetUniformLocation(specProgram.programID, "roughTex");
-    glUniform1i(roughTexLocation, 2);
+    glBindTexture(GL_TEXTURE_2D, gaussianFBO.colorTexBuffer);
+    GLuint finDiffTexLocation = glGetUniformLocation(specProgram.programID, "gaussianDiffTex");
+    glUniform1i(finDiffTexLocation, 2);
 
-    glActiveTexture(GL_TEXTURE3);
-    glBindTexture(GL_TEXTURE_2D, specAOTex);
-    specTexLocation = glGetUniformLocation(specProgram.programID, "specAOTex");
-    glUniform1i(specTexLocation, 3);
+    sizeLocation = glGetUniformLocation(specProgram.programID, "size");
+    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
 
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     glDrawElements(GL_TRIANGLES, triangles.size() * 3, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
-
-
-
-    // 2. draw on gaussianFBO
-    glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
-    glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0.1, 0.1, 0.1, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(gaussianProgram.programID);
-
-    // diffFBO에 있는 텍스처 사용해서 가우시안 하기 위해 보내기
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffFBO.colorTexBuffer);
-    GLuint colorTexLocation = glGetUniformLocation(gaussianProgram.programID, "colorTex");
-    glUniform1i(colorTexLocation, 0);
-
-    //glActiveTexture(GL_TEXTURE1);
-    //glBindTexture(GL_TEXTURE_2D, diffFBO.depthBuffer);
-    //GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
-    //glUniform1i(depthTexLocation, 1);
-
-    GLuint sizeLocation = glGetUniformLocation(gaussianProgram.programID, "size");
-    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
-
-    // Draw a quad to apply Gaussian blur
-    glBindVertexArray(quadArrrayBuffer);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
-
-
-
-    // 3. draw on default framebuffer (quad plane with the attached framebuffer color texture)
-    glBindFramebuffer(GL_FRAMEBUFFER, 0);
-    glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0.1, 0.1, 0.1, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(screenProgram.programID);
-
-    // diffuse에 gaussian blur한 텍스처와 specular 텍스처 그리기 위해 보내기
-    // gaussianDiffTex
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, gaussianFBO.colorTexBuffer);
-    GLuint finDiffTexLocation = glGetUniformLocation(screenProgram.programID, "gaussianDiffTex");
-    glUniform1i(finDiffTexLocation, 0);
-
-    // specTex
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, specFBO.colorTexBuffer);
-    GLuint finSpecTexLocation = glGetUniformLocation(screenProgram.programID, "specTex");
-    glUniform1i(finSpecTexLocation, 1);
-
-    /*glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
-    GLuint depthTexLocation = glGetUniformLocation(screenProgram.programID, "depthTex");
-    glUniform1i(depthTexLocation, 2);*/
-
-    sizeLocation = glGetUniformLocation(screenProgram.programID, "size");
-    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
-
-    // Draw a quad to display the final result
-    glBindVertexArray(quadArrrayBuffer);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
-
-    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 GLuint loadTextureMap(const char* filename)

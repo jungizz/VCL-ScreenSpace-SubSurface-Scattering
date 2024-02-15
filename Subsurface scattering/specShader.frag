@@ -6,14 +6,12 @@
 
 uniform vec3 cameraPosition;
 uniform vec3 lightPosition;
-uniform vec3 lightColor;
-uniform vec3 ambientLight;
-//uniform float shininess;
 
 uniform sampler2D diffTex;
-uniform sampler2D normTex;
 uniform sampler2D roughTex;
-uniform sampler2D specAOTex;
+
+uniform sampler2D gaussianDiffTex;
+uniform vec2 size;
 
 in vec3 normal;
 in vec3 worldPosition;
@@ -63,20 +61,23 @@ void main(void)
 	float roughness = texture(roughTex, texCoords).r;
 	roughness *= roughness; // remapping roughness (alpha)
 
-	// 1. specular BRDF
+	// specular BRDF
 	float D = D_GGX(NoH, NoH * roughness);
 	float V = V_SmithGGXCorrelated(NoV, NoL, roughness);
 	vec3 F = F_Schlick(LoH, f0);
 
 	vec3 Fr = (D * V) * F;
 
+	// diffuse BRDF with gaussian blur
+	vec3 Fd = texture(gaussianDiffTex, gl_FragCoord.xy / size).rgb;
+
 	// color
 	vec4 color = texture(diffTex, texCoords);
 	color.rgb = pow(color.rgb, vec3(2.2)); // gamma correction (to linear space)
-	
+
 
 	// final
-	vec3 c = color.rgb + Fr;
+	vec3 c = Fd * color.rgb + Fr;
 	//vec3 c = Fr;
 	out_Color = vec4(pow(c, vec3(1/2.2)), 1); // gamma correction (to srgb)
 }

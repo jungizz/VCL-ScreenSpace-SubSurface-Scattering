@@ -139,8 +139,6 @@
     <None Include="diffShader.vert" />
     <None Include="gaussianBlur.frag" />
     <None Include="gaussianBlur.vert" />
-    <None Include="screenShader.frag" />
-    <None Include="screenShader.vert" />
     <None Include="shader.frag" />
     <None Include="shader.vert" />
     <None Include="specShader.frag" />
