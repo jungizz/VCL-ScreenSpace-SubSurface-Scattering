@@ -21,9 +21,6 @@
     <None Include="shader.vert">
       <Filter>소스 파일</Filter>
     </None>
-    <None Include="gaussianBlur.frag">
-      <Filter>소스 파일</Filter>
-    </None>
     <None Include="gaussianBlur.vert">
       <Filter>소스 파일</Filter>
     </None>
@@ -39,7 +36,10 @@
     <None Include="specShader.vert">
       <Filter>소스 파일</Filter>
     </None>
-    <None Include="gaussianBlur2.frag">
+    <None Include="colGaussianBlur.frag">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="rowGaussianBlur.frag">
       <Filter>소스 파일</Filter>
     </None>
   </ItemGroup>
