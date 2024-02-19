@@ -39,6 +39,9 @@
     <None Include="specShader.vert">
       <Filter>소스 파일</Filter>
     </None>
+    <None Include="gaussianBlur2.frag">
+      <Filter>소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="moveCam.h">

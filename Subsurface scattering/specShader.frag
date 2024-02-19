@@ -78,6 +78,6 @@ void main(void)
 
 	// final
 	vec3 c = Fd * color.rgb + Fr * NoL;
-	//out_Color = vec4(pow(c, vec3(1/2.2)), 1); // gamma correction (to srgb)
+	out_Color = vec4(pow(c, vec3(1/2.2)), 1); // gamma correction (to srgb)
 	//out_Color = vec4(Fd, 1);
 }

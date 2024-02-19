@@ -79,11 +79,13 @@ float quadVertices[] = { // 화면 전체에 렌더링하기 위한 사각형 �
 FBO diffFBO;
 FBO specFBO;
 FBO gaussianFBO;
+FBO gaussianFBO2;
 
 Program diffProgram;
 Program specProgram;
 Program screenProgram;
 Program gaussianProgram;
+Program gaussianProgram2;
 
 GLuint diffTex = 0; // duffuse map ID
 GLuint normTex = 0; // normal map ID
@@ -105,6 +107,7 @@ void init() {
     specProgram.loadShaders("specShader.vert", "specShader.frag");
     screenProgram.loadShaders("screenShader.vert", "screenShader.frag");
     gaussianProgram.loadShaders("gaussianBlur.vert", "gaussianBlur.frag");
+    gaussianProgram2.loadShaders("gaussianBlur.vert", "gaussianBlur2.frag");
 
     // Vertex Buffer Object (VBO)
     glGenBuffers(1, &vertexBuffer); // 버퍼 1개 생성
@@ -167,6 +170,10 @@ void init() {
     glGenFramebuffers(1, &gaussianFBO.frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO.frameBuffer);
     attachBuffers(&gaussianFBO);
+
+    glGenFramebuffers(1, &gaussianFBO2.frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO2.frameBuffer);
+    attachBuffers(&gaussianFBO2);
 }
 
 
@@ -253,6 +260,33 @@ void render(GLFWwindow* window)
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
+    // 2-1. draw on gaussianFBO2 
+    glBindFramebuffer(GL_FRAMEBUFFER, gaussianFBO2.frameBuffer);
+    glViewport(0, 0, nowSize.x, nowSize.y);
+    glClearColor(0.1, 0.1, 0.1, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(gaussianProgram2.programID);
+
+    // diffFBO에 있는 텍스처 사용해서 가우시안 하기 위해 보내기
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, gaussianFBO.colorTexBuffer);
+    colorTexLocation = glGetUniformLocation(gaussianProgram2.programID, "colorTex");
+    glUniform1i(colorTexLocation, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, gaussianFBO.depthBuffer);
+    depthTexLocation = glGetUniformLocation(gaussianProgram2.programID, "depthTex");
+    glUniform1i(depthTexLocation, 1);
+
+    sizeLocation = glGetUniformLocation(gaussianProgram2.programID, "size");
+    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
+
+    // Draw a quad to apply Gaussian blur
+    glBindVertexArray(quadArrrayBuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
 
     // 3. draw on specular FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
@@ -288,7 +322,7 @@ void render(GLFWwindow* window)
     glUniform1i(roughTexLocation, 1);
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, gaussianFBO.colorTexBuffer);
+    glBindTexture(GL_TEXTURE_2D, gaussianFBO2.colorTexBuffer);
     GLuint finDiffTexLocation = glGetUniformLocation(specProgram.programID, "gaussianDiffTex");
     glUniform1i(finDiffTexLocation, 2);
 

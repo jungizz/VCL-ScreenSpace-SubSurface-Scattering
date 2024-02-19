@@ -33,18 +33,18 @@ void main(void)
 	vec2 texelSize = 1.0/size;
 	vec3 resColor = vec3(0.0);
 
-	int wx = (int(kernel.x)-1)/2;
+	int wy = (int(kernel.y)-1)/2;
 	
 	float wSum = 0;
 
-	for(int dx=-wx; dx<=wx; dx++)
+	for(int dy=-wy; dy<=wy; dy++)
 	{
 		// texCoords 대신 gl_FragCoord.xy/size 사용
-		float xx =  gl_FragCoord.x / size.x + (dx * texelSize.x);
+		float yy =  gl_FragCoord.y / size.y + (dy * texelSize.y);
 	
-		float w = exp(-(dx*dx)/(2.0 * sigma * sigma));
+		float w = exp(-(dy*dy)/(2.0 * sigma * sigma));
 		wSum += w;
-		resColor += w*texture(colorTex, vec2(xx, gl_FragCoord.y/size.y)).rgb;
+		resColor += w*texture(colorTex, vec2(gl_FragCoord.x/size.x, yy)).rgb;
 	}
 	resColor /= wSum;
 	 
