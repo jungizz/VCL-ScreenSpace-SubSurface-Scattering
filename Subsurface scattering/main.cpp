@@ -106,8 +106,8 @@ void init() {
     diffProgram.loadShaders("diffShader.vert", "diffShader.frag");
     specProgram.loadShaders("specShader.vert", "specShader.frag");
     screenProgram.loadShaders("screenShader.vert", "screenShader.frag");
-    rowGaussianProgram.loadShaders("gaussianBlur.vert", "colGaussianBlur.frag");
-    colGaussianProgram.loadShaders("gaussianBlur.vert", "rowGaussianBlur.frag");
+    rowGaussianProgram.loadShaders("gaussianBlur.vert", "rowGaussianBlur.frag");
+    colGaussianProgram.loadShaders("gaussianBlur.vert", "colGaussianBlur.frag");
 
     // Vertex Buffer Object (VBO)
     glGenBuffers(1, &vertexBuffer); // 버퍼 1개 생성
@@ -260,7 +260,7 @@ void render(GLFWwindow* window)
     glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
-    // 2-1. draw on colGaussianFBO 
+    // 3. draw on colGaussianFBO 
     glBindFramebuffer(GL_FRAMEBUFFER, colGaussianFBO.frameBuffer);
     glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
@@ -268,7 +268,6 @@ void render(GLFWwindow* window)
 
     glUseProgram(colGaussianProgram.programID);
 
-    // diffFBO에 있는 텍스처 사용해서 가우시안 하기 위해 보내기
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, rowGaussianFBO.colorTexBuffer);
     colorTexLocation = glGetUniformLocation(colGaussianProgram.programID, "colorTex");
@@ -288,7 +287,7 @@ void render(GLFWwindow* window)
     glBindVertexArray(0);
 
 
-    // 3. draw on specular FBO
+    // 4. draw on specular FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
