@@ -42,6 +42,12 @@
     <None Include="rowGaussianBlur.frag">
       <Filter>소스 파일</Filter>
     </None>
+    <None Include="colorShader.frag">
+      <Filter>소스 파일</Filter>
+    </None>
+    <None Include="colorShader.vert">
+      <Filter>소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="moveCam.h">

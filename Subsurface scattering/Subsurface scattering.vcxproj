@@ -135,6 +135,8 @@
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="colorShader.frag" />
+    <None Include="colorShader.vert" />
     <None Include="diffShader.frag" />
     <None Include="diffShader.vert" />
     <None Include="rowGaussianBlur.frag" />

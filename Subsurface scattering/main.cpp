@@ -77,13 +77,14 @@ float quadVertices[] = { // 화면 전체에 렌더링하기 위한 사각형 �
 
 
 FBO diffFBO;
-FBO specFBO;
+FBO colorFBO;
 FBO rowGaussianFBO;
 FBO colGaussianFBO;
+FBO specFBO;
 
 Program diffProgram;
 Program specProgram;
-Program screenProgram;
+Program colorProgram;
 Program rowGaussianProgram;
 Program colGaussianProgram;
 
@@ -105,7 +106,7 @@ void init() {
     }
     diffProgram.loadShaders("diffShader.vert", "diffShader.frag");
     specProgram.loadShaders("specShader.vert", "specShader.frag");
-    screenProgram.loadShaders("screenShader.vert", "screenShader.frag");
+    colorProgram.loadShaders("colorShader.vert", "colorShader.frag");
     rowGaussianProgram.loadShaders("gaussianBlur.vert", "rowGaussianBlur.frag");
     colGaussianProgram.loadShaders("gaussianBlur.vert", "colGaussianBlur.frag");
 
@@ -165,6 +166,11 @@ void init() {
     glGenFramebuffers(1, &diffFBO.frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, diffFBO.frameBuffer);
     attachBuffers(&diffFBO);
+
+    // color Frame Buffer Object
+    glGenFramebuffers(1, &colorFBO.frameBuffer);
+    glBindFramebuffer(GL_FRAMEBUFFER, colorFBO.frameBuffer);
+    attachBuffers(&colorFBO);
 
     // gaussian Frame Buffer Object 
     glGenFramebuffers(1, &rowGaussianFBO.frameBuffer);
@@ -287,7 +293,35 @@ void render(GLFWwindow* window)
     glBindVertexArray(0);
 
 
-    // 4. draw on specular FBO
+    // 4. draw on color FBO
+    glBindFramebuffer(GL_FRAMEBUFFER, colorFBO.frameBuffer);
+    glViewport(0, 0, nowSize.x, nowSize.y);
+    glClearColor(0.1, 0.1, 0.1, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(colorProgram.programID);
+
+    modelMatLocation = glGetUniformLocation(colorProgram.programID, "modelMat");
+    glUniformMatrix4fv(modelMatLocation, 1, 0, value_ptr(mat4(1)));
+
+    viewMatLocation = glGetUniformLocation(colorProgram.programID, "viewMat");
+    glUniformMatrix4fv(viewMatLocation, 1, 0, value_ptr(viewMat));
+
+    projMatLocation = glGetUniformLocation(colorProgram.programID, "projMat");
+    glUniformMatrix4fv(projMatLocation, 1, 0, value_ptr(projMat));
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, diffTex);
+    GLuint diffTexLocation = glGetUniformLocation(colorProgram.programID, "diffTex");
+    glUniform1i(diffTexLocation, 0);
+
+    glBindVertexArray(vertexArray);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
+    glDrawElements(GL_TRIANGLES, triangles.size() * 3, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+
+    // 5. draw on specular FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
@@ -311,19 +345,19 @@ void render(GLFWwindow* window)
     glUniform3fv(lightPositionLocation, 1, value_ptr(lightPosition));
 
     glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffTex);
-    GLuint diffTexLocation = glGetUniformLocation(specProgram.programID, "diffTex");
-    glUniform1i(diffTexLocation, 0);
-
-    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, roughTex);
     GLuint roughTexLocation = glGetUniformLocation(specProgram.programID, "roughTex");
-    glUniform1i(roughTexLocation, 1);
+    glUniform1i(roughTexLocation, 0);
 
-    glActiveTexture(GL_TEXTURE2);
+    glActiveTexture(GL_TEXTURE1);
     glBindTexture(GL_TEXTURE_2D, colGaussianFBO.colorTexBuffer);
     GLuint finDiffTexLocation = glGetUniformLocation(specProgram.programID, "gaussianDiffTex");
-    glUniform1i(finDiffTexLocation, 2);
+    glUniform1i(finDiffTexLocation, 1);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, colorFBO.colorTexBuffer);
+    colorTexLocation = glGetUniformLocation(specProgram.programID, "colorTex");
+    glUniform1i(colorTexLocation, 2);
 
     sizeLocation = glGetUniformLocation(specProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
