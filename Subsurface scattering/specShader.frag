@@ -9,7 +9,6 @@ uniform vec3 lightPosition;
 
 uniform sampler2D roughTex;
 uniform sampler2D gaussianDiffTex;
-uniform sampler2D colorTex;
 uniform vec2 size;
 
 in vec3 normal;
@@ -70,11 +69,9 @@ void main(void)
 	// diffuse BRDF with gaussian blur
 	vec3 Fd = texture(gaussianDiffTex, gl_FragCoord.xy / size).rgb;
 
-	// color
-	vec3 color = texture(colorTex, gl_FragCoord.xy / size).rgb;
-
 
 	// final
-	vec3 c = Fd * color + Fr * NoL;
-	out_Color = vec4(pow(c, vec3(1/2.2)), 1);// gamma correction (to srgb)
+	vec3 c = Fd + Fr * NoL;
+	//out_Color = vec4(pow(c, vec3(1/2.2)), 1); // gamma correction (to srgb)
+	out_Color = vec4(Fd, 1);
 }

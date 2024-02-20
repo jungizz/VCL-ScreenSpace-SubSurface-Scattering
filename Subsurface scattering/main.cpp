@@ -239,61 +239,7 @@ void render(GLFWwindow* window)
     glBindVertexArray(0);
 
 
-    // 2. draw on rowGaussianFBO
-    glBindFramebuffer(GL_FRAMEBUFFER, rowGaussianFBO.frameBuffer);
-    glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0.1, 0.1, 0.1, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(rowGaussianProgram.programID);
-
-    // diffFBO에 있는 텍스처 사용해서 가우시안 하기 위해 보내기
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, diffFBO.colorTexBuffer);
-    GLuint colorTexLocation = glGetUniformLocation(rowGaussianProgram.programID, "colorTex");
-    glUniform1i(colorTexLocation, 0);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, diffFBO.depthBuffer);
-    GLuint depthTexLocation = glGetUniformLocation(rowGaussianProgram.programID, "depthTex");
-    glUniform1i(depthTexLocation, 1);
-
-    GLuint sizeLocation = glGetUniformLocation(rowGaussianProgram.programID, "size");
-    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
-
-    // Draw a quad to apply Gaussian blur
-    glBindVertexArray(quadArrrayBuffer);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
-
-    // 3. draw on colGaussianFBO 
-    glBindFramebuffer(GL_FRAMEBUFFER, colGaussianFBO.frameBuffer);
-    glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0.1, 0.1, 0.1, 0);
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    glUseProgram(colGaussianProgram.programID);
-
-    glActiveTexture(GL_TEXTURE0);
-    glBindTexture(GL_TEXTURE_2D, rowGaussianFBO.colorTexBuffer);
-    colorTexLocation = glGetUniformLocation(colGaussianProgram.programID, "colorTex");
-    glUniform1i(colorTexLocation, 0);
-
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, rowGaussianFBO.depthBuffer);
-    depthTexLocation = glGetUniformLocation(colGaussianProgram.programID, "depthTex");
-    glUniform1i(depthTexLocation, 1);
-
-    sizeLocation = glGetUniformLocation(colGaussianProgram.programID, "size");
-    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
-
-    // Draw a quad to apply Gaussian blur
-    glBindVertexArray(quadArrrayBuffer);
-    glDrawArrays(GL_TRIANGLES, 0, 6);
-    glBindVertexArray(0);
-
-
-    // 4. draw on color FBO
+    // 2. draw on color FBO
     glBindFramebuffer(GL_FRAMEBUFFER, colorFBO.frameBuffer);
     glViewport(0, 0, nowSize.x, nowSize.y);
     glClearColor(0.1, 0.1, 0.1, 0);
@@ -318,6 +264,67 @@ void render(GLFWwindow* window)
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     glDrawElements(GL_TRIANGLES, triangles.size() * 3, GL_UNSIGNED_INT, 0);
+    glBindVertexArray(0);
+
+
+
+    // 3. draw on rowGaussianFBO
+    glBindFramebuffer(GL_FRAMEBUFFER, rowGaussianFBO.frameBuffer);
+    glViewport(0, 0, nowSize.x, nowSize.y);
+    glClearColor(0.1, 0.1, 0.1, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(rowGaussianProgram.programID);
+
+    // diffFBO에 있는 텍스처 사용해서 가우시안 하기 위해 보내기
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, diffFBO.colorTexBuffer);
+    diffTexLocation = glGetUniformLocation(rowGaussianProgram.programID, "diffTex");
+    glUniform1i(diffTexLocation, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, colorFBO.colorTexBuffer);
+    GLuint colorTexLocation = glGetUniformLocation(rowGaussianProgram.programID, "colorTex");
+    glUniform1i(colorTexLocation, 1);
+
+    glActiveTexture(GL_TEXTURE2);
+    glBindTexture(GL_TEXTURE_2D, diffFBO.depthBuffer);
+    GLuint depthTexLocation = glGetUniformLocation(rowGaussianProgram.programID, "depthTex");
+    glUniform1i(depthTexLocation, 2);
+
+    GLuint sizeLocation = glGetUniformLocation(rowGaussianProgram.programID, "size");
+    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
+
+    // Draw a quad to apply Gaussian blur
+    glBindVertexArray(quadArrrayBuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
+    glBindVertexArray(0);
+
+
+    // 4. draw on colGaussianFBO 
+    glBindFramebuffer(GL_FRAMEBUFFER, colGaussianFBO.frameBuffer);
+    glViewport(0, 0, nowSize.x, nowSize.y);
+    glClearColor(0.1, 0.1, 0.1, 0);
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glUseProgram(colGaussianProgram.programID);
+
+    glActiveTexture(GL_TEXTURE0);
+    glBindTexture(GL_TEXTURE_2D, rowGaussianFBO.colorTexBuffer);
+    diffTexLocation = glGetUniformLocation(colGaussianProgram.programID, "diffTex");
+    glUniform1i(diffTexLocation, 0);
+
+    glActiveTexture(GL_TEXTURE1);
+    glBindTexture(GL_TEXTURE_2D, rowGaussianFBO.depthBuffer);
+    depthTexLocation = glGetUniformLocation(colGaussianProgram.programID, "depthTex");
+    glUniform1i(depthTexLocation, 1);
+
+    sizeLocation = glGetUniformLocation(colGaussianProgram.programID, "size");
+    glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
+
+    // Draw a quad to apply Gaussian blur
+    glBindVertexArray(quadArrrayBuffer);
+    glDrawArrays(GL_TRIANGLES, 0, 6);
     glBindVertexArray(0);
 
 
@@ -350,14 +357,9 @@ void render(GLFWwindow* window)
     glUniform1i(roughTexLocation, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, colGaussianFBO.colorTexBuffer);
+    glBindTexture(GL_TEXTURE_2D, rowGaussianFBO.colorTexBuffer);
     GLuint finDiffTexLocation = glGetUniformLocation(specProgram.programID, "gaussianDiffTex");
     glUniform1i(finDiffTexLocation, 1);
-
-    glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, colorFBO.colorTexBuffer);
-    colorTexLocation = glGetUniformLocation(specProgram.programID, "colorTex");
-    glUniform1i(colorTexLocation, 2);
 
     sizeLocation = glGetUniformLocation(specProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
