@@ -11,7 +11,7 @@ uniform vec2 size;
 out vec4 out_Color;
 
 vec2 kernel = {15, 15}; 
-const float variances[6] = {0.0064, 0.0484, 0.187, 0.0567, 1.99, 7.41};
+const float variances[6] = {0.0064, 0.0484, 0.187, 0.567, 1.99, 7.41};
 const vec3  weights[6] = { vec3(0.233, 0.455, 0.649),
 						   vec3(0.100, 0.336, 0.344), 
 						   vec3(0.118, 0.198, 0.000),
@@ -35,6 +35,9 @@ void main(void)
 {
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // [0,1] (가까울수록 0)
 	float z = LinearizeDepth(depth); // camera coord depth
+	z = (z - n) / (f - n); // z[0,1]
+	z = pow(z, 1/1.3);
+	kernel.y = mix(17, 3, z);
 
 	vec2 texelSize = 1.0/size;	
 	int wy = (int(kernel.y)-1)/2;

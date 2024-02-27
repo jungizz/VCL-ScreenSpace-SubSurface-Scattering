@@ -11,7 +11,7 @@ uniform vec2 size;
 out vec4 out_Color;
 
 vec2 kernel = {15, 15}; 
-const float variances[6] = {0.0064, 0.0484, 0.187, 0.0567, 1.99, 7.41};
+const float variances[6] = {0.0064, 0.0484, 0.187, 0.567, 1.99, 7.41};
 const vec3  weights[6] = { vec3(0.233, 0.455, 0.649),
 						   vec3(0.100, 0.336, 0.344), 
 						   vec3(0.118, 0.198, 0.000),
@@ -23,19 +23,22 @@ const float alpha = 11; // glbal SSS level
 const float beta = 800; // how SSS varies with depth gradient
 
 float n = 0.01; // near
-float f = 1.0;  // far 
+float f = 10.0;  // far 
 
 float LinearizeDepth(float dPri)
 {
-	float d = dPri * 2 - 1; // [0,1] -> [-1, 1]
-	return (2 * n * f) / (n + f + d * (n - f));
+	float d = dPri * 2 - 1; // d[0,1] -> d[-1, 1]
+	return (2 * n * f) / (n + f + d * (n - f)); // z[n, f]
 }
 
 
 void main(void)
 {
-	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // [0,1] (가까울수록 0)
-	float z = LinearizeDepth(depth); // camera coord depth
+	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // d[0,1] (가까울수록 0)
+	float z = LinearizeDepth(depth); // camera coord depth z[n, f]
+	z = (z - n) / (f - n); // z[0,1]
+	z = pow(z, 1/1.3);
+	kernel.x = mix(17, 3, z);
 
 	vec2 texelSize = 1.0/size;
 	int wx = (int(kernel.x)-1)/2;	
@@ -61,5 +64,5 @@ void main(void)
 	 
 	out_Color = vec4(resColor, 1.0);
 	//out_Color = vec4(pow(vec3(z), vec3(4)), 1.0); // camera coord depth test
-	
+	//out_Color = vec4(vec3(z), 1.0); // camera coord depth test	
 }
