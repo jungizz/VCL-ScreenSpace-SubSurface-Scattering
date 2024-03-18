@@ -195,8 +195,16 @@ void render(GLFWwindow* window)
     mat4 cameraRotationMatrix2 = rotate(cameraTheta, vec3(0, 1, 0)); // 수직 회전 행렬
     vec3 cameraPosition = cameraRotationMatrix2 * cameraRotationMatrix1 * vec4(initialCameraPosition, 1);
 
-    mat4 viewMat = glm::lookAt(cameraPosition, vec3(0, 0, 0), vec3(0, 1, 0));    // 뷰행렬
+    mat4 viewMat = glm::lookAt(cameraPosition, vec3(0, 0, 0), vec3(0, 1, 0));           // 뷰행렬
     mat4 projMat = glm::perspective(fovy, nowSize.x / (float)nowSize.y, 0.01f, 1000.f); // 투영행렬
+
+
+    // legnth test
+    vec4 a = inverse(viewMat) * inverse(projMat) * vec4(100, 0, 0, 0);
+    vec4 b = inverse(viewMat) * inverse(projMat) * vec4(200, 0, 0, 0);
+    float dis = distance(a, b);
+    std::cout << "distance: " << dis << std::endl;
+
 
     GLuint modelMatLocation = glGetUniformLocation(diffProgram.programID, "modelMat");
     glUniformMatrix4fv(modelMatLocation, 1, 0, value_ptr(mat4(1)));

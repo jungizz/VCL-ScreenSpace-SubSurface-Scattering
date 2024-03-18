@@ -37,7 +37,6 @@ void main(void)
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // d[0,1] (가까울수록 0)
 	float z = LinearizeDepth(depth); // camera coord depth z[n, f]
 	z = (z - n) / (f - n); // z[0,1]
-	z = pow(z, 1/1.3);
 	kernel.x = mix(17, 3, z);
 
 	vec2 texelSize = 1.0/size;
@@ -64,5 +63,5 @@ void main(void)
 	 
 	out_Color = vec4(resColor, 1.0);
 	//out_Color = vec4(pow(vec3(z), vec3(4)), 1.0); // camera coord depth test
-	//out_Color = vec4(vec3(z), 1.0); // camera coord depth test	
+	//out_Color = vec4(vec3(z) * 3, 1.0); // camera coord depth test	
 }

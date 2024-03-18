@@ -36,7 +36,6 @@ void main(void)
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // [0,1] (가까울수록 0)
 	float z = LinearizeDepth(depth); // camera coord depth
 	z = (z - n) / (f - n); // z[0,1]
-	z = pow(z, 1/1.3);
 	kernel.y = mix(17, 3, z);
 
 	vec2 texelSize = 1.0/size;	

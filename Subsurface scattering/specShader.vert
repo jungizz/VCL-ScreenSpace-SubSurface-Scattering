@@ -22,7 +22,7 @@ void main(void)
 	p = projMat * viewMat * modelMat * p;
 	gl_Position= p;
     
-    worldPosition = vec3(modelMat * vec4(in_Position, 1));     
+    worldPosition = vec3(modelMat * vec4(in_Position, 1));
     normal = normalize((modelMat * vec4(in_Normal, 0)).xyz);
     texCoords = in_TexCoords;
 }
