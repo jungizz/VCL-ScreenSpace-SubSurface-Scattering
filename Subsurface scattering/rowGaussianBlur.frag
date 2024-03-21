@@ -37,6 +37,8 @@ void main(void)
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // d[0,1] (가까울수록 0)
 	float z = LinearizeDepth(depth); // camera coord depth z[n, f]
 	z = (z - n) / (f - n); // z[0,1]
+
+	//kernel.x = 17;
 	kernel.x = mix(17, 3, z);
 
 	vec2 texelSize = 1.0/size;
@@ -47,9 +49,13 @@ void main(void)
 
 	for(int i=0; i<6; i++)
 	{
-		float variance = variances[i];
+		float variance = variances[i];	
+		//float sigma = n * sqrt(variances[i]) / z;
+		//float variance = sigma * sigma; //world coord
+		
 		vec3 weight = weights[i];
 
+		//for(int dx=-sigma; dx<=sigma; dx++)
 		for(int dx=-wx; dx<=wx; dx++)
 		{
 			float xx =  gl_FragCoord.x / size.x + (dx * texelSize.x);	
@@ -62,6 +68,5 @@ void main(void)
 	resColor /= wSum;
 	 
 	out_Color = vec4(resColor, 1.0);
-	//out_Color = vec4(pow(vec3(z), vec3(4)), 1.0); // camera coord depth test
-	//out_Color = vec4(vec3(z) * 3, 1.0); // camera coord depth test	
+	//out_Color = vec4(vec3(z), 1.0); // camera coord depth test	
 }
