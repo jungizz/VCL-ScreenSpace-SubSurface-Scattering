@@ -255,6 +255,9 @@ void render(GLFWwindow* window)
     GLuint sizeLocation = glGetUniformLocation(rowGaussianProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
 
+    GLuint fovyLocation = glGetUniformLocation(rowGaussianProgram.programID, "screenWidth");
+    glUniform1f(fovyLocation, 2 * 0.01 * tan(fovy / 2)); // screen width in world coord
+
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -321,7 +324,7 @@ void render(GLFWwindow* window)
     glUniform1i(roughTexLocation, 1);
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, colGaussianFBO.colorTexBuffer);
+    glBindTexture(GL_TEXTURE_2D, rowGaussianFBO.colorTexBuffer);
     GLuint finDiffTexLocation = glGetUniformLocation(specProgram.programID, "gaussianDiffTex");
     glUniform1i(finDiffTexLocation, 2);
 

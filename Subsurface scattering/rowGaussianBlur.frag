@@ -7,11 +7,11 @@
 uniform sampler2D colorTex;
 uniform sampler2D depthTex;
 uniform vec2 size;
+uniform float screenWidth;
 
 out vec4 out_Color;
 
-vec2 kernel = {15, 15}; 
-const float variances[6] = {0.0064, 0.0484, 0.187, 0.567, 1.99, 7.41};
+const float variances[6] = {0.0064, 0.0484, 0.187, 0.567, 1.99, 7.41}; // m단위
 const vec3  weights[6] = { vec3(0.233, 0.455, 0.649),
 						   vec3(0.100, 0.336, 0.344), 
 						   vec3(0.118, 0.198, 0.000),
@@ -39,27 +39,32 @@ void main(void)
 	z = (z - n) / (f - n); // z[0,1]
 
 	//kernel.x = 17;
-	kernel.x = mix(17, 3, z);
+	//kernel.x = mix(17, 3, z);
 
 	vec2 texelSize = 1.0/size;
-	int wx = (int(kernel.x)-1)/2;	
 	
 	vec3 wSum = vec3(0);
 	vec3 resColor = vec3(0.0);
 
 	for(int i=0; i<6; i++)
 	{
-		float variance = variances[i];	
-		//float sigma = n * sqrt(variances[i]) / z;
-		//float variance = sigma * sigma; //world coord
+		//float variance = variances[i];	
+		float sigma = sqrt(variances[i]) * .001; // kernel size (mm단위를 m단위로 바꿈)
+		float sigmaPri = (n * sigma) / z; // kernel size at screen in world coord
+		sigmaPri /= screenWidth; // kernel size at screen in normal coord [0,1]
+		float variance = sigmaPri * sigmaPri;
 		
+		int kernel = int(sigmaPri * size.x)/2; // kernel size in pixel (sigma*2 -> kernel size)
+		//int wx = (int(kernel.x)-1)/2; 
+
 		vec3 weight = weights[i];
 
+
 		//for(int dx=-sigma; dx<=sigma; dx++)
-		for(int dx=-wx; dx<=wx; dx++)
+		for(int dx=-kernel; dx<=kernel; dx++)
 		{
 			float xx =  gl_FragCoord.x / size.x + (dx * texelSize.x);	
-			vec3 w = weight * exp(-(dx*dx*.0000001)/(2.0 * variance)); // variance가 너무 작아서 분모에 *.0000001
+			vec3 w = weight * exp(-(dx*dx*.00001)/(2.0 * variance)); // variance가 너무 작아서 분모에 *.0000001
 			wSum += w;
 
 			resColor += w * texture(colorTex, vec2(xx, gl_FragCoord.y/size.y)).rgb;

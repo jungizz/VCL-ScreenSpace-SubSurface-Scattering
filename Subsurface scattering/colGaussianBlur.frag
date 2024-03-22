@@ -22,7 +22,7 @@ const float alpha = 11; // glbal SSS level
 const float beta = 800; // how SSS varies with depth gradient
 
 float n = 0.01; // near
-float f = 1.0;  // far 
+float f = 10.0;  // far 
 
 float LinearizeDepth(float dPri)
 {
