@@ -36,7 +36,7 @@ void main(void)
 {
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // [0,1] (가까울수록 0)
 	float z = LinearizeDepth(depth); // camera coord depth
-	z = (z - n) / (f - n); // z[0,1]
+	//z = (z - n) / (f - n); // z[0,1]
 
 	vec2 texelSize = 1.0/size;
 
@@ -50,9 +50,11 @@ void main(void)
 		float sigma = sqrt(variances[i]) * .001; // kernel size (mm단위를 m단위로 바꿈)
 		float sigmaPri = (n * sigma) / z; // kernel size at screen in world coord
 		sigmaPri /= screenHeight;// kernel size at screen in normal coord [0,1]
+		sigmaPri *= size.y; // change to pixel coord
 		float variance = sigmaPri * sigmaPri;
 
-		int kernel = int(sigmaPri * size.y);
+		int kernel = int(sigmaPri);
+		//int kernel = int(sigmaPri * size.y/100); // 얘가 너무 커서...... 렉 개많이 걸림 근데 row땐 안그랬는데 ㅜ
 		//int kernel = 7;
 
 		vec3 weight = weights[i];
@@ -60,7 +62,7 @@ void main(void)
 		for(int dy=-kernel; dy<=kernel; dy++)
 		{
 			float yy =  gl_FragCoord.y / size.y + (dy * texelSize.y);	
-			vec3 w = weight * exp(-(dy*dy*.0000001)/(2.0 * variance)); // variance가 너무 작아서 분모에 *.0000001
+			vec3 w = weight * exp(-(dy*dy)/(2.0 * variance)); // variance가 너무 작아서 분모에 *.0000001
 			wSum += w;
 
 			resColor += w * texture(colorTex, vec2(gl_FragCoord.x/size.x, yy)).rgb;

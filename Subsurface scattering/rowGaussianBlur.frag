@@ -36,7 +36,7 @@ void main(void)
 {
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // d[0,1] (가까울수록 0)
 	float z = LinearizeDepth(depth); // camera coord depth z[n, f]
-	z = (z - n) / (f - n); // z[0,1]
+	//z = (z - n) / (f - n); // z[0,1]
 
 	//kernel.x = 17;
 	//kernel.x = mix(17, 3, z);
@@ -52,9 +52,11 @@ void main(void)
 		float sigma = sqrt(variances[i]) * .001; // kernel size (mm단위를 m단위로 바꿈)
 		float sigmaPri = (n * sigma) / z; // kernel size at screen in world coord
 		sigmaPri /= screenWidth; // kernel size at screen in normal coord [0,1]
+		sigmaPri *= size.x; //change to pixel coord
 		float variance = sigmaPri * sigmaPri;
 		
-		int kernel = int(sigmaPri * size.x); // kernel size in pixel (sigma*2 -> kernel size)
+		int kernel = int(sigmaPri);
+		//int kernel = int(sigmaPri * size.x); // kernel size in pixel (sigma*2 -> kernel size)
 		//int kernel = 7;
 
 		vec3 weight = weights[i];
@@ -64,7 +66,7 @@ void main(void)
 		for(int dx=-kernel; dx<=kernel; dx++)
 		{
 			float xx =  gl_FragCoord.x / size.x + (dx * texelSize.x);	
-			vec3 w = weight * exp(-(dx*dx*.0000001)/(2.0 * variance)); // variance가 너무 작아서 분모에 *.0000001
+			vec3 w = weight * exp(-(dx*dx)/(2.0 * variance));
 			wSum += w;
 
 			resColor += w * texture(colorTex, vec2(xx, gl_FragCoord.y/size.y)).rgb;

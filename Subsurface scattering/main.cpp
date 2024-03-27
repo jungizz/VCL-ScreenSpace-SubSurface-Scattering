@@ -256,7 +256,7 @@ void render(GLFWwindow* window)
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
 
     GLuint widthLocation = glGetUniformLocation(rowGaussianProgram.programID, "screenWidth");
-    glUniform1f(widthLocation, 2 * 0.01 * (tan(fovy / 2) * 1.5)); // screen width in world coord
+    glUniform1f(widthLocation, 2 * 0.01 * (tan(fovy / 2) * (nowSize.x/nowSize.y))); // screen width in world coord
 
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
