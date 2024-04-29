@@ -17,6 +17,8 @@
 #include "objLoader.h"
 #include "moveCam.h"
 
+//#pragma comment(lib, "assimp-vc143-mtd.lib")
+
 using namespace glm;
 
 // Framebuffer Object structure
@@ -378,3 +380,5 @@ void attachBuffers(FBO* fbo)
     if (glCheckFramebufferStatus(GL_FRAMEBUFFER) != GL_FRAMEBUFFER_COMPLETE)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 }
+
+
