@@ -32,9 +32,11 @@ void render(GLFWwindow* window);
 void init();
 
 GLuint loadTextureMap(const char* filename);
-void attachBuffers(FBO* fbo); 
+void attachBuffers(FBO* fbo);
+void processInput(GLFWwindow* window);
 
 vec2 windowSize = { 1080, 720 };
+int option = 1;
 
 int main(void) 
 {
@@ -50,6 +52,7 @@ int main(void)
     init();                                    
     glfwSwapInterval(1);                       // 스왑 간격 : 0 설정하면 fps 제한X, 1 설정하면 fps 제한 60
     while (!glfwWindowShouldClose(window)) {   // 창이 닫히기 전까지 무한루프
+        processInput(window);
         render(window);
         glfwSwapBuffers(window);
         glfwPollEvents();                      // 대기 중인 이벤트 처리
@@ -279,7 +282,7 @@ void render(GLFWwindow* window)
     glUniform1i(colorTexLocation, 0);
 
     glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, rowGaussianFBO.depthBuffer);
+    glBindTexture(GL_TEXTURE_2D, diffFBO.depthBuffer);
     depthTexLocation = glGetUniformLocation(colGaussianProgram.programID, "depthTex");
     glUniform1i(depthTexLocation, 1);
 
@@ -333,8 +336,16 @@ void render(GLFWwindow* window)
     GLuint finDiffTexLocation = glGetUniformLocation(specProgram.programID, "gaussianDiffTex");
     glUniform1i(finDiffTexLocation, 2);
 
+    glActiveTexture(GL_TEXTURE3);
+    glBindTexture(GL_TEXTURE_2D, diffFBO.colorTexBuffer);
+    GLuint diffModelTexLocation = glGetUniformLocation(specProgram.programID, "pass1Tex");
+    glUniform1i(diffModelTexLocation, 3);
+
     sizeLocation = glGetUniformLocation(specProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
+
+    GLuint optionLocation = glGetUniformLocation(specProgram.programID, "option");
+    glUniform1i(optionLocation, option);
 
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
@@ -382,3 +393,23 @@ void attachBuffers(FBO* fbo)
 }
 
 
+void processInput(GLFWwindow* window)
+{
+    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+        glfwSetWindowShouldClose(window, true);
+
+    if (option != 1 && glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+        option = 1;
+        std::cout << "no SSSSS result" << std::endl;
+    }
+
+    if (option != 2 && glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+        option = 2;
+        std::cout << "Gaussian blur on diffuse texture" << std::endl;
+    }
+
+    if (option != 3 && glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+        option = 3;
+        std::cout << "SSSSS result" << std::endl;
+    }
+}

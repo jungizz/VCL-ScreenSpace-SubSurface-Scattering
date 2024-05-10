@@ -11,7 +11,10 @@ uniform sampler2D diffTex;
 uniform sampler2D roughTex;
 
 uniform sampler2D gaussianDiffTex;
+uniform sampler2D pass1Tex;
+
 uniform vec2 size;
+uniform int option;
 
 in vec3 normal;
 in vec3 worldPosition;
@@ -57,12 +60,12 @@ void main(void)
 	float LoH = clamp(dot(l, h), 0.0, 1.0);
 	
 
-	vec3 f0 = vec3(0.028, 0.028, 0.028); // 'skin' specular reflectance at normal incidnece angle
+	vec3 f0 = vec3(0.128, 0.128, 0.128); // 'skin' specular reflectance at normal incidnece angle
 	float roughness = texture(roughTex, texCoords).r;
 	roughness *= roughness; // remapping roughness (alpha)
 
 	// specular BRDF
-	float D = D_GGX(NoH, NoH * roughness);
+	float D = D_GGX(NoH, roughness);
 	float V = V_SmithGGXCorrelated(NoV, NoL, roughness);
 	vec3 F = F_Schlick(LoH, f0);
 
@@ -75,9 +78,22 @@ void main(void)
 	vec4 color = texture(diffTex, texCoords);
 	color.rgb = pow(color.rgb, vec3(2.2)); // gamma correction (to linear space)
 
-
+	
 	// final
-	vec3 c = Fd * color.rgb + Fr * NoL;
-	out_Color = vec4(pow(c, vec3(1/2.2)), 1); // gamma correction (to srgb)
-	//out_Color = vec4(Fd, 1);
+	vec3 c;
+
+	// key1: default (pass1 result)
+	if(option == 1){
+		vec3 pass1diffTex = texture(pass1Tex, gl_FragCoord.xy / size).rgb;
+		c = pow( pass1diffTex * color.rgb + Fr * NoL, vec3(1/2.2));
+	} 
+
+	// key2: Gaussian on diffuse texture
+	if(option == 2) c = Fd;
+
+	// key3: diffuse + specular (sssss result)
+	else if(option == 3) c = pow(Fd * color.rgb + Fr * NoL, vec3(1/2.2));
+
+	out_Color = vec4(c, 1);
+
 }

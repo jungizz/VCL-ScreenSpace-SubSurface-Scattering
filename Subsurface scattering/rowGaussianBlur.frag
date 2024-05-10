@@ -36,10 +36,6 @@ void main(void)
 {
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // d[0,1] (가까울수록 0)
 	float z = LinearizeDepth(depth); // camera coord depth z[n, f]
-	//z = (z - n) / (f - n); // z[0,1]
-
-	//kernel.x = 17;
-	//kernel.x = mix(17, 3, z);
 
 	vec2 texelSize = 1.0/size;
 	
@@ -55,14 +51,12 @@ void main(void)
 		sigmaPri *= size.x; //change to pixel coord
 		float variance = sigmaPri * sigmaPri;
 		
-		int kernel = int(sigmaPri);
+		int kernel = min(10,int(sigmaPri));
 		//int kernel = int(sigmaPri * size.x); // kernel size in pixel (sigma*2 -> kernel size)
 		//int kernel = 7;
 
 		vec3 weight = weights[i];
 
-
-		//for(int dx=-sigma; dx<=sigma; dx++)
 		for(int dx=-kernel; dx<=kernel; dx++)
 		{
 			float xx =  gl_FragCoord.x / size.x + (dx * texelSize.x);	

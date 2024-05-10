@@ -36,13 +36,11 @@ void main(void)
 {
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // [0,1] (가까울수록 0)
 	float z = LinearizeDepth(depth); // camera coord depth
-	//z = (z - n) / (f - n); // z[0,1]
 
 	vec2 texelSize = 1.0/size;
 
 	vec3 wSum = vec3(0);
 	vec3 resColor = vec3(0.0);
-
 
 	for(int i=0; i<6; i++)
 	{
@@ -53,7 +51,7 @@ void main(void)
 		sigmaPri *= size.y; // change to pixel coord
 		float variance = sigmaPri * sigmaPri;
 
-		int kernel = int(sigmaPri);
+		int kernel = min(10,int(sigmaPri));
 		//int kernel = int(sigmaPri * size.y/100); // 얘가 너무 커서...... 렉 개많이 걸림 근데 row땐 안그랬는데 ㅜ
 		//int kernel = 7;
 
