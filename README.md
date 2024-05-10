@@ -6,6 +6,6 @@
 - [Velog](https://velog.io/@jungizz_/2023-동계-모각소-알구자구-1주차)
 ---
 ### Work in Progress
-![image](https://github.com/jungizz/VCL-ScreenSpace-SubSurface-Scattering/assets/113113802/0c655718-5434-4b6e-a6e0-4fd412fdbb67)
-![image](https://github.com/jungizz/VCL-ScreenSpace-SubSurface-Scattering/assets/113113802/742abb9e-d2cd-49e8-81bf-a78caf2749a2)
-![image](https://github.com/jungizz/VCL-ScreenSpace-SubSurface-Scattering/assets/113113802/891579ac-d06f-4ecd-882e-c7c529d4d030)
+<img width="1062" alt="image" src="https://github.com/jungizz/VCL-ScreenSpace-SubSurface-Scattering/assets/113113802/aa5d4e94-df23-4cb4-a832-6178fcfbb3d3">
+<img width="1062" alt="image" src="https://github.com/jungizz/VCL-ScreenSpace-SubSurface-Scattering/assets/113113802/d2e90be1-067f-4eb0-a4db-6d6787187a91">
+(L: SSSSS not applied, R: SSSSS applied)
