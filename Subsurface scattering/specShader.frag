@@ -60,7 +60,7 @@ void main(void)
 	float LoH = clamp(dot(l, h), 0.0, 1.0);
 	
 
-	vec3 f0 = vec3(0.128, 0.128, 0.128); // 'skin' specular reflectance at normal incidnece angle
+	vec3 f0 = vec3(0.028, 0.028, 0.028); // 'skin' specular reflectance at normal incidnece angle
 	float roughness = texture(roughTex, texCoords).r;
 	roughness *= roughness; // remapping roughness (alpha)
 
@@ -86,6 +86,7 @@ void main(void)
 	if(option == 1){
 		vec3 pass1diffTex = texture(pass1Tex, gl_FragCoord.xy / size).rgb;
 		c = pow( pass1diffTex * color.rgb + Fr * NoL, vec3(1/2.2));
+		//c = pass1diffTex;
 	} 
 
 	// key2: Gaussian on diffuse texture

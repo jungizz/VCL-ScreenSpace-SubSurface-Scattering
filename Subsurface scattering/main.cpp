@@ -41,7 +41,7 @@ int option = 1;
 int main(void) 
 {
     if (!glfwInit()) exit(EXIT_FAILURE);                                    // glfw 핵심 객체 초기화
-    glfwWindowHint(GLFW_SAMPLES, 8);                                        // 생성할 Window의 기본 설정
+    glfwWindowHint(GLFW_SAMPLES, 16);                                        // 생성할 Window의 기본 설정
     GLFWwindow* window = glfwCreateWindow(windowSize.x, windowSize.y, "Hello", NULL, NULL);   // 창 객체 생성
 
     glfwSetCursorPosCallback(window, cursorPosCallback);

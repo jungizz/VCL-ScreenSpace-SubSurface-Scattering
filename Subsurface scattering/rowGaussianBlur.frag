@@ -35,7 +35,8 @@ float LinearizeDepth(float dPri)
 void main(void)
 {
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // d[0,1] (가까울수록 0)
-	float z = LinearizeDepth(depth); // camera coord depth z[n, f]
+	float worldZ = LinearizeDepth(depth); // world coord linear depth z[n, f]
+	float z = worldZ / f; //[0, 1]
 
 	vec2 texelSize = 1.0/size;
 	
@@ -46,14 +47,12 @@ void main(void)
 	{
 		//float variance = variances[i];	
 		float sigma = sqrt(variances[i]) * .001; // kernel size (mm단위를 m단위로 바꿈)
-		float sigmaPri = (n * sigma) / z; // kernel size at screen in world coord
+		float sigmaPri = (n * sigma) / worldZ; // kernel size at screen in world coord
 		sigmaPri /= screenWidth; // kernel size at screen in normal coord [0,1]
 		sigmaPri *= size.x; //change to pixel coord
 		float variance = sigmaPri * sigmaPri;
 		
 		int kernel = min(10,int(sigmaPri));
-		//int kernel = int(sigmaPri * size.x); // kernel size in pixel (sigma*2 -> kernel size)
-		//int kernel = 7;
 
 		vec3 weight = weights[i];
 
@@ -69,5 +68,5 @@ void main(void)
 	resColor /= wSum;
 	 
 	out_Color = vec4(resColor, 1.0);
-	//out_Color = vec4(vec3(z), 1.0); // camera coord depth test	
+	//out_Color = vec4(vec3(z/f), 1); // camera coord depth test	
 }

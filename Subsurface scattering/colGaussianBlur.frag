@@ -34,8 +34,9 @@ float LinearizeDepth(float dPri)
 
 void main(void)
 {
-	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // [0,1] (가까울수록 0)
-	float z = LinearizeDepth(depth); // camera coord depth
+	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // d[0,1] (가까울수록 0)
+	float worldZ = LinearizeDepth(depth); // world coord linear depth z[n, f]
+	float z = worldZ / f; //[0, 1]
 
 	vec2 texelSize = 1.0/size;
 
@@ -46,14 +47,12 @@ void main(void)
 	{
 		//float variance = variances[i];
 		float sigma = sqrt(variances[i]) * .001; // kernel size (mm단위를 m단위로 바꿈)
-		float sigmaPri = (n * sigma) / z; // kernel size at screen in world coord
+		float sigmaPri = (n * sigma) / worldZ; // kernel size at screen in world coord
 		sigmaPri /= screenHeight;// kernel size at screen in normal coord [0,1]
 		sigmaPri *= size.y; // change to pixel coord
 		float variance = sigmaPri * sigmaPri;
 
 		int kernel = min(10,int(sigmaPri));
-		//int kernel = int(sigmaPri * size.y/100); // 얘가 너무 커서...... 렉 개많이 걸림 근데 row땐 안그랬는데 ㅜ
-		//int kernel = 7;
 
 		vec3 weight = weights[i];
 
@@ -69,6 +68,5 @@ void main(void)
 	resColor /= wSum;
 	 
 	out_Color = vec4(resColor, 1.0);
-	//out_Color = vec4(pow(vec3(z), vec3(4)), 1.0); // camera coord depth test
 	
 }
