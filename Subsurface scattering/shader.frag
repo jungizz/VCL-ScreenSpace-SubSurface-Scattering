@@ -66,7 +66,6 @@ void main(void)
 	// normal mapping
 	mat3 TBN = getTBN(n);
 	vec3 normVec = texture(normTex,texCoords).rgb*2-1; // [0, 1] -> [-1, 1]
-	//n = normalize(TBN * normVec);
 
 
 	float NoV = abs(dot(n, v)) + 1e-5;
