@@ -25,7 +25,6 @@ out vec4 out_Color;
 const float PI = 3.14159265358979f;
 
 
-
 float V_SmithGGXCorrelated(float NoV, float NoL, float roughness) {
     float a2 = roughness * roughness;
     float GGXL = NoV * sqrt((-NoL * a2 + NoL) * NoL + a2);
@@ -69,7 +68,7 @@ void main(void)
 	float V = V_SmithGGXCorrelated(NoV, NoL, roughness);
 	vec3 F = F_Schlick(LoH, f0);
 
-	vec3 Fr = (D * V) * F / (NoV * (NoL+1e-5) * 4);
+	vec3 Fr = (D * V) * F;
 
 	// diffuse BRDF with gaussian blur
 	vec3 Fd = texture(gaussianDiffTex, gl_FragCoord.xy / size).rgb;

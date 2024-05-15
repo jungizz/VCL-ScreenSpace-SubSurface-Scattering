@@ -68,5 +68,5 @@ void main(void)
 	resColor /= wSum;
 	 
 	out_Color = vec4(resColor, 1.0);
-	//out_Color = vec4(vec3(z/f), 1); // camera coord depth test	
+	//out_Color = vec4(vec3(z), 1); // camera coord depth test	
 }

@@ -37,11 +37,12 @@ void processInput(GLFWwindow* window);
 
 vec2 windowSize = { 1080, 720 };
 int option = 1;
+//bool isMSAA = false;
 
 int main(void) 
 {
     if (!glfwInit()) exit(EXIT_FAILURE);                                    // glfw 핵심 객체 초기화
-    glfwWindowHint(GLFW_SAMPLES, 16);                                        // 생성할 Window의 기본 설정
+    glfwWindowHint(GLFW_SAMPLES, 8);                                        // 생성할 Window의 기본 설정
     GLFWwindow* window = glfwCreateWindow(windowSize.x, windowSize.y, "Hello", NULL, NULL);   // 창 객체 생성
 
     glfwSetCursorPosCallback(window, cursorPosCallback);
@@ -179,6 +180,8 @@ void init() {
     glGenFramebuffers(1, &colGaussianFBO.frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, colGaussianFBO.frameBuffer);
     attachBuffers(&colGaussianFBO);
+
+    //glEnable(GL_MULTISAMPLE);
 }
 
 
@@ -192,6 +195,8 @@ void render(GLFWwindow* window)
     glClearColor(0.1, 0.1, 0.1, 0);
     glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    //if (isMSAA) glEnable(GL_MULTISAMPLE);
 
     glUseProgram(diffProgram.programID);
 
@@ -380,6 +385,7 @@ void attachBuffers(FBO* fbo)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo->colorTexBuffer, 0); // attachment
 
+
     // texture buffer object to be used for depth buffer
     glGenTextures(1, &fbo->depthBuffer);
     glBindTexture(GL_TEXTURE_2D, fbo->depthBuffer);
@@ -412,4 +418,12 @@ void processInput(GLFWwindow* window)
         option = 3;
         std::cout << "SSSSS result" << std::endl;
     }
+    //if (!isMSAA && glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+    //    isMSAA = true;
+    //    std::cout << "antialiasing" << std::endl;
+    //}
+    //if (isMSAA && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+    //    isMSAA = false;
+    //    std::cout << "no antialiasing" << std::endl;
+    //}
 }
