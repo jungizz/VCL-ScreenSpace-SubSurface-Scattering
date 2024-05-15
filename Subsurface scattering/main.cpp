@@ -11,11 +11,13 @@
 #include <glm/gtc/type_ptr.hpp>
 #include <iostream>
 #include <vector>
+
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #include "toys.h"
 #include "objLoader.h"
 #include "moveCam.h"
+//#include "guiLoader.h"
 
 //#pragma comment(lib, "assimp-vc143-mtd.lib")
 
@@ -35,13 +37,38 @@ GLuint loadTextureMap(const char* filename);
 void attachBuffers(FBO* fbo);
 void processInput(GLFWwindow* window);
 
+//ImGuiIO& io = ImGui::GetIO();
 vec2 windowSize = { 1080, 720 };
 int option = 1;
-//bool isMSAA = false;
+int val = 1;
 
 int main(void) 
 {
-    if (!glfwInit()) exit(EXIT_FAILURE);                                    // glfw 핵심 객체 초기화
+    if (!glfwInit()) exit(EXIT_FAILURE); // glfw 핵심 객체 초기화
+    
+    // Decide GL+GLSL versions
+//#if defined(IMGUI_IMPL_OPENGL_ES2)
+//    // GL ES 2.0 + GLSL 100
+//    const char* glsl_version = "#version 100";
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 2);
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+//    glfwWindowHint(GLFW_CLIENT_API, GLFW_OPENGL_ES_API);
+//#elif defined(__APPLE__)
+//    // GL 3.2 + GLSL 150
+//    const char* glsl_version = "#version 150";
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 2);
+//    glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+//    glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // Required on Mac
+//#else
+//    // GL 3.0 + GLSL 130
+//    const char* glsl_version = "#version 130";
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
+//    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 0);
+//    //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
+//    //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
+//#endif
+    
     glfwWindowHint(GLFW_SAMPLES, 8);                                        // 생성할 Window의 기본 설정
     GLFWwindow* window = glfwCreateWindow(windowSize.x, windowSize.y, "Hello", NULL, NULL);   // 창 객체 생성
 
@@ -50,13 +77,15 @@ int main(void)
 
     glfwMakeContextCurrent(window);            // 생성된 창에 대응되는 opengl 컨텍스트 객체 생성        
     glewInit();
-    init();                                    
+    init();       
     glfwSwapInterval(1);                       // 스왑 간격 : 0 설정하면 fps 제한X, 1 설정하면 fps 제한 60
+    //io = guiInit(window, glsl_version);
     while (!glfwWindowShouldClose(window)) {   // 창이 닫히기 전까지 무한루프
         processInput(window);
         render(window);
         glfwSwapBuffers(window);
         glfwPollEvents();                      // 대기 중인 이벤트 처리
+        //guiRender(window);
     }                                          
     glfwDestroyWindow(window);                 // 루프가 끝났으므로 종료
     glfwTerminate();
@@ -102,6 +131,9 @@ vec3 lightPosition = vec3(3, 3, 10);
 vec3 lightColor = vec3(500);
 vec3 ambientLight = vec3(0.0);
 
+//bool show_demo_window = true;
+//bool show_another_window = false;
+//ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
 void init() {
     if (!loadObj("resources/LPS_Head.obj")) {
@@ -187,6 +219,11 @@ void init() {
 
 void render(GLFWwindow* window) 
 {
+    //// Start the Dear ImGui frame
+    //ImGui_ImplOpenGL3_NewFrame();
+    //ImGui_ImplGlfw_NewFrame();
+    //ImGui::NewFrame();
+
     // 1. draw on diffuse FBO
     glBindFramebuffer(GL_FRAMEBUFFER, diffFBO.frameBuffer);
     ivec2 nowSize;
@@ -268,6 +305,9 @@ void render(GLFWwindow* window)
     GLuint widthLocation = glGetUniformLocation(rowGaussianProgram.programID, "screenWidth");
     glUniform1f(widthLocation, 2 * 0.01 * (tan(fovy / 2) * (nowSize.x/nowSize.y))); // screen width in world coord
 
+    GLuint valLocation = glGetUniformLocation(rowGaussianProgram.programID, "val");
+    glUniform1i(valLocation, val);
+
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -296,6 +336,9 @@ void render(GLFWwindow* window)
 
     GLuint heightLocation = glGetUniformLocation(colGaussianProgram.programID, "screenHeight");
     glUniform1f(heightLocation, 2 * 0.01 * tan(fovy / 2)); // screen height in world coord
+
+    valLocation = glGetUniformLocation(colGaussianProgram.programID, "val");
+    glUniform1i(valLocation, val);
 
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
@@ -356,6 +399,40 @@ void render(GLFWwindow* window)
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     glDrawElements(GL_TRIANGLES, triangles.size() * 3, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+    //{
+    //    static float f = 0.0f;
+    //    static int counter = 0;
+
+    //    ImGui::Begin("Hello, world!");                          // Create a window called "Hello, world!" and append into it.
+
+    //    ImGui::Text("This is some useful text.");               // Display some text (you can use a format strings too)
+    //    ImGui::Checkbox("Demo Window", &show_demo_window);      // Edit bools storing our window open/close state
+    //    ImGui::Checkbox("Another Window", &show_another_window);
+
+    //    ImGui::SliderFloat("float", &f, 0.0f, 1.0f);            // Edit 1 float using a slider from 0.0f to 1.0f
+    //    ImGui::ColorEdit3("clear color", (float*)&clear_color); // Edit 3 floats representing a color
+
+    //    if (ImGui::Button("Button"))                            // Buttons return true when clicked (most widgets return true when edited/activated)
+    //        counter++;
+    //    ImGui::SameLine();
+    //    ImGui::Text("counter = %d", counter);
+
+    //    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+    //    ImGui::End();
+    //}
+
+    //// Rendering
+    //ImGui::Render();
+    //int display_w, display_h;
+    //glfwGetFramebufferSize(window, &display_w, &display_h);
+    //glViewport(0, 0, display_w, display_h);
+    //glClearColor(clear_color.x* clear_color.w, clear_color.y* clear_color.w, clear_color.z* clear_color.w, clear_color.w);
+    //glClear(GL_COLOR_BUFFER_BIT);
+    //ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+    //glfwSwapBuffers(window);
+
 }
 
 GLuint loadTextureMap(const char* filename)
@@ -418,12 +495,12 @@ void processInput(GLFWwindow* window)
         option = 3;
         std::cout << "SSSSS result" << std::endl;
     }
-    //if (!isMSAA && glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-    //    isMSAA = true;
-    //    std::cout << "antialiasing" << std::endl;
-    //}
-    //if (isMSAA && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-    //    isMSAA = false;
-    //    std::cout << "no antialiasing" << std::endl;
-    //}
+    if (val != 1 && glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+        val = 1;
+        std::cout << "modulated kernel width according to depth" << std::endl;
+    }
+    if (val != 0 && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+        val = 0;
+        std::cout << "no modulated kernel" << std::endl;
+    }
 }

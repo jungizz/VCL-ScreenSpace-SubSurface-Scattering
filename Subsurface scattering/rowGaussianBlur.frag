@@ -8,10 +8,11 @@ uniform sampler2D colorTex;
 uniform sampler2D depthTex;
 uniform vec2 size;
 uniform float screenWidth; // screen width in world coord
+uniform int val;
 
 out vec4 out_Color;
 
-const float variances[6] = {0.0064, 0.0484, 0.187, 0.567, 1.99, 7.41}; // m단위
+const float variances[6] = {0.0064, 0.0484, 0.187, 0.567, 1.99, 7.41}; // mm단위
 const vec3  weights[6] = { vec3(0.233, 0.455, 0.649),
 						   vec3(0.100, 0.336, 0.344), 
 						   vec3(0.118, 0.198, 0.000),
@@ -52,7 +53,9 @@ void main(void)
 		sigmaPri *= size.x; //change to pixel coord
 		float variance = sigmaPri * sigmaPri;
 		
-		int kernel = min(10,int(sigmaPri));
+		int kernel;
+		if(val==0) kernel = min(10,int(sigmaPri));
+		else if(val == 1) kernel = min(10, int(mix(sigmaPri*10, 0, z)));
 
 		vec3 weight = weights[i];
 

@@ -149,6 +149,7 @@
     <None Include="specShader.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="guiLoader.h" />
     <ClInclude Include="moveCam.h" />
     <ClInclude Include="objLoader.h" />
   </ItemGroup>

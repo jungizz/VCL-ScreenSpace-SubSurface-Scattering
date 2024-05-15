@@ -50,6 +50,9 @@
     <ClInclude Include="objLoader.h">
       <Filter>소스 파일</Filter>
     </ClInclude>
+    <ClInclude Include="guiLoader.h">
+      <Filter>소스 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
