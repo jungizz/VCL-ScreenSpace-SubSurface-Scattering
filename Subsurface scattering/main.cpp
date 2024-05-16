@@ -81,9 +81,8 @@ int main(void)
     guiInit(window, glsl_version);
 
     while (!glfwWindowShouldClose(window)) {   // 창이 닫히기 전까지 무한루프
-        processInput(window);
+        //processInput(window);
         render(window);
-        guiRender(window);
         glfwSwapBuffers(window);
         glfwPollEvents();                      // 대기 중인 이벤트 처리
 
@@ -119,7 +118,6 @@ FBO colGaussianFBO;
 
 Program diffProgram;
 Program specProgram;
-Program screenProgram;
 Program rowGaussianProgram;
 Program colGaussianProgram;
 
@@ -135,14 +133,17 @@ vec3 ambientLight = vec3(0.0);
 
 
 void init() {
-    if (!loadObj("resources/LPS_Head.obj")) {
+    std::string modelfile;
+    if(selectModel == 0) modelfile = "resources/LPS_Head.obj";
+    if(selectModel == 1) modelfile = "resources/hand2.obj";
+
+    if (!loadObj(modelfile)) {
         std::cerr << "Failed to load the model!" << std::endl;
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
     diffProgram.loadShaders("diffShader.vert", "diffShader.frag");
     specProgram.loadShaders("specShader.vert", "specShader.frag");
-    screenProgram.loadShaders("screenShader.vert", "screenShader.frag");
     rowGaussianProgram.loadShaders("gaussianBlur.vert", "rowGaussianBlur.frag");
     colGaussianProgram.loadShaders("gaussianBlur.vert", "colGaussianBlur.frag");
 
@@ -182,11 +183,16 @@ void init() {
 
 
     // Texture
-    diffTex= loadTextureMap("resources/LPS_lambertian.jpg");
-    normTex = loadTextureMap("resources/LPS_NormalMap.png");
-    roughTex = loadTextureMap("resources/LPS_Roughness.png");
-    specAOTex = loadTextureMap("resources/LPS_SpecularAO.png");
-
+    if (selectModel == 0) {
+        diffTex= loadTextureMap("resources/LPS_lambertian.jpg");
+        normTex = loadTextureMap("resources/LPS_NormalMap.png");
+        roughTex = loadTextureMap("resources/LPS_Roughness.png");
+        specAOTex = loadTextureMap("resources/LPS_SpecularAO.png");
+    }
+    else if (selectModel == 1) {
+        diffTex = loadTextureMap("resources/hand2D.jpg");
+        normTex = loadTextureMap("resources/hand2N.png");
+    }
 
     // screen quad VAO
     glGenBuffers(1, &quadVertexBuffer);
@@ -299,8 +305,8 @@ void render(GLFWwindow* window)
     GLuint widthLocation = glGetUniformLocation(rowGaussianProgram.programID, "screenWidth");
     glUniform1f(widthLocation, 2 * 0.01 * (tan(fovy / 2) * (nowSize.x/nowSize.y))); // screen width in world coord
 
-    GLuint valLocation = glGetUniformLocation(rowGaussianProgram.programID, "val");
-    glUniform1i(valLocation, val);
+    GLuint adjKernelLocation = glGetUniformLocation(rowGaussianProgram.programID, "isAdjKernel");
+    glUniform1i(adjKernelLocation, (isAdjKernel) ? 1 : 0);
 
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
@@ -331,8 +337,8 @@ void render(GLFWwindow* window)
     GLuint heightLocation = glGetUniformLocation(colGaussianProgram.programID, "screenHeight");
     glUniform1f(heightLocation, 2 * 0.01 * tan(fovy / 2)); // screen height in world coord
 
-    valLocation = glGetUniformLocation(colGaussianProgram.programID, "val");
-    glUniform1i(valLocation, val);
+    adjKernelLocation = glGetUniformLocation(colGaussianProgram.programID, "isAdjKernel");
+    glUniform1i(adjKernelLocation, (isAdjKernel) ? 1 : 0);
 
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
@@ -383,16 +389,53 @@ void render(GLFWwindow* window)
     GLuint diffModelTexLocation = glGetUniformLocation(specProgram.programID, "pass1Tex");
     glUniform1i(diffModelTexLocation, 3);
 
+    GLuint specRefLocation = glGetUniformLocation(specProgram.programID, "size");
+    glUniform3fv(specRefLocation, 1, value_ptr(specReflectance));
+
     sizeLocation = glGetUniformLocation(specProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
-
-    GLuint optionLocation = glGetUniformLocation(specProgram.programID, "option");
-    glUniform1i(optionLocation, option);
-
+    
+    GLuint selSceneLocation = glGetUniformLocation(specProgram.programID, "selectScene");
+    glUniform1i(selSceneLocation, selectScene);
+    
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
     glDrawElements(GL_TRIANGLES, triangles.size() * 3, GL_UNSIGNED_INT, 0);
     glBindVertexArray(0);
+
+
+    // 5. render Gui
+    // Start the Dear ImGui frame
+    ImGui_ImplOpenGL3_NewFrame();
+    ImGui_ImplGlfw_NewFrame();
+    ImGui::NewFrame();
+
+    // Show a simple window that we create ourselves. We use a Begin/End pair to create a named window.
+    {
+
+        ImGui::Begin("Setting");
+
+        ImGui::Text("Select Model");
+        if (ImGui::RadioButton("Head", &selectModel, 0)) init();
+        if (ImGui::RadioButton("Hand", &selectModel, 1)) init();
+
+        ImGui::Text("Select Scene");
+        ImGui::RadioButton("Default Rendering", &selectScene, 0);
+        ImGui::RadioButton("Subsurface Scattering", &selectScene, 1);
+        ImGui::RadioButton("Gaussian blur on Diffuse", &selectScene, 2);
+
+        ImGui::Text("Property");
+        ImGui::Checkbox("Kernel with Depth", &isAdjKernel);
+        ImGui::InputFloat3("specular reflectance", &specReflectance.x);
+
+        ImGui::End();
+    }
+
+
+    // Rendering
+    ImGui::Render();
+
+    ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
 GLuint loadTextureMap(const char* filename)

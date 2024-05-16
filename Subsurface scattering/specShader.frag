@@ -13,8 +13,9 @@ uniform sampler2D roughTex;
 uniform sampler2D gaussianDiffTex;
 uniform sampler2D pass1Tex;
 
+uniform vec3 specReflectance;
 uniform vec2 size;
-uniform int option;
+uniform int selectScene;
 
 in vec3 normal;
 in vec3 worldPosition;
@@ -59,7 +60,8 @@ void main(void)
 	float LoH = clamp(dot(l, h), 0.0, 1.0);
 	
 
-	vec3 f0 = vec3(0.028, 0.028, 0.028); // 'skin' specular reflectance at normal incidnece angle
+	//vec3 f0 = vec3(0.028, 0.028, 0.028); // 'skin' specular reflectance at normal incidnece angle
+	vec3 f0 = specReflectance;
 	float roughness = texture(roughTex, texCoords).r;
 	roughness *= roughness; // remapping roughness (alpha)
 
@@ -81,18 +83,20 @@ void main(void)
 	// final
 	vec3 c;
 
-	// key1: default (pass1 result)
-	if(option == 1){
+	// 1. default (pass1 result)
+	if(selectScene == 0){
 		vec3 pass1diffTex = texture(pass1Tex, gl_FragCoord.xy / size).rgb;
 		c = pow( pass1diffTex * color.rgb + Fr * NoL, vec3(1/2.2));
 		//c = pass1diffTex;
 	} 
 
-	// key2: Gaussian on diffuse texture
-	if(option == 2) c = Fd;
+	// 2. diffuse + specular (sssss result)
+	else if(selectScene == 1){
+		c = pow(Fd * color.rgb + Fr * NoL, vec3(1/2.2));
+	}
 
-	// key3: diffuse + specular (sssss result)
-	else if(option == 3) c = pow(Fd * color.rgb + Fr * NoL, vec3(1/2.2));
+	// 3. Gaussian on diffuse texture
+	else if(selectScene == 2) c = Fd;
 
 	out_Color = vec4(c, 1);
 
