@@ -28,7 +28,7 @@ float fovy = 30 * PI / 180; // 시야각
 void cursorPosCallback(GLFWwindow* win, double xpos, double ypos) {
     static double lastX = 0;
     static double lastY = 0;
-    if (glfwGetMouseButton(win, GLFW_MOUSE_BUTTON_1)) {
+    if (glfwGetMouseButton(win, GLFW_MOUSE_BUTTON_3)) {
         double dx = xpos - lastX;
         double dy = ypos - lastY;
         int w, h;
@@ -47,9 +47,10 @@ void cursorPosCallback(GLFWwindow* win, double xpos, double ypos) {
 }
 
 void scrollCallback(GLFWwindow* win, double xoffset, double yoffset) {
-    fovy -= yoffset / 30; // yoffset은 휠을 위로 올릴 때 양수, 아래로 내릴 때 음수
-    if (fovy < 0) fovy = 0;
-    else if (fovy > PI) fovy = PI;
+    cameraDistance -= yoffset / 20;
+    //fovy -= yoffset / 50; // yoffset은 휠을 위로 올릴 때 양수, 아래로 내릴 때 음수
+    //if (fovy < 0) fovy = 0;
+    //else if (fovy > PI) fovy = PI;
 }
 
 #endif

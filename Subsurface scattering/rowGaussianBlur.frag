@@ -9,6 +9,7 @@ uniform sampler2D depthTex;
 uniform vec2 size;
 uniform float screenWidth; // screen width in world coord
 uniform int isAdjKernel;
+uniform int kernelParam;
 
 out vec4 out_Color;
 
@@ -55,7 +56,8 @@ void main(void)
 		
 		int kernel;
 		if(isAdjKernel==0) kernel = min(10,int(sigmaPri));
-		else if(isAdjKernel == 1) kernel = min(10, int(mix(sigmaPri*10, 0, z)));
+		else if(isAdjKernel == 1) kernel = min(10, int(mix(sigmaPri*10, sigmaPri*0.1, z)));
+		kernel *= kernelParam;
 
 		vec3 weight = weights[i];
 

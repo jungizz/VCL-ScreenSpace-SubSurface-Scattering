@@ -11,6 +11,7 @@
 int selectModel = 0;
 int selectScene = 0;
 bool isAdjKernel = false;
+
 vec3 specReflectance = vec3(0.028, 0.028, 0.028);
 
 void guiInit(GLFWwindow* window, const char* glsl_version) {

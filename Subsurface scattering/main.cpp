@@ -38,8 +38,9 @@ void attachBuffers(FBO* fbo);
 void processInput(GLFWwindow* window);
 
 vec2 windowSize = { 1080, 720 };
-int option = 1;
-int val = 1;
+//int option = 1;
+//int val = 1;
+float kernelParam = 0.1f;
 
 int main(void) 
 {
@@ -135,7 +136,8 @@ vec3 ambientLight = vec3(0.0);
 void init() {
     std::string modelfile;
     if(selectModel == 0) modelfile = "resources/LPS_Head.obj";
-    if(selectModel == 1) modelfile = "resources/hand2.obj";
+    if(selectModel == 1) modelfile = "resources/hand1.obj";
+    if(selectModel == 2) modelfile = "resources/soap.obj";
 
     if (!loadObj(modelfile)) {
         std::cerr << "Failed to load the model!" << std::endl;
@@ -190,8 +192,12 @@ void init() {
         specAOTex = loadTextureMap("resources/LPS_SpecularAO.png");
     }
     else if (selectModel == 1) {
-        diffTex = loadTextureMap("resources/hand2D.jpg");
-        normTex = loadTextureMap("resources/hand2N.png");
+        diffTex = loadTextureMap("resources/hand1D.png");
+        normTex = loadTextureMap("resources/hand1N.png");
+    }
+    else if (selectModel == 2) {
+        diffTex = loadTextureMap("resources/soapD.png");
+        normTex = loadTextureMap("resources/soapN.png");
     }
 
     // screen quad VAO
@@ -308,6 +314,9 @@ void render(GLFWwindow* window)
     GLuint adjKernelLocation = glGetUniformLocation(rowGaussianProgram.programID, "isAdjKernel");
     glUniform1i(adjKernelLocation, (isAdjKernel) ? 1 : 0);
 
+    GLuint kerParaLocation = glGetUniformLocation(rowGaussianProgram.programID, "kernelParam");
+    glUniform1i(kerParaLocation, int(kernelParam*20));
+
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
     glDrawArrays(GL_TRIANGLES, 0, 6);
@@ -339,6 +348,9 @@ void render(GLFWwindow* window)
 
     adjKernelLocation = glGetUniformLocation(colGaussianProgram.programID, "isAdjKernel");
     glUniform1i(adjKernelLocation, (isAdjKernel) ? 1 : 0);
+
+    kerParaLocation = glGetUniformLocation(colGaussianProgram.programID, "kernelParam");
+    glUniform1i(kerParaLocation, int(kernelParam*20));
 
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
@@ -415,26 +427,54 @@ void render(GLFWwindow* window)
 
         ImGui::Begin("Setting");
 
-        ImGui::Text("Select Model");
-        if (ImGui::RadioButton("Head", &selectModel, 0)) init();
-        if (ImGui::RadioButton("Hand", &selectModel, 1)) init();
-
         ImGui::Text("Select Scene");
         ImGui::RadioButton("Default Rendering", &selectScene, 0);
         ImGui::RadioButton("Subsurface Scattering", &selectScene, 1);
         ImGui::RadioButton("Gaussian blur on Diffuse", &selectScene, 2);
+        ImGui::Text("\n");
 
-        ImGui::Text("Property");
-        ImGui::Checkbox("Kernel with Depth", &isAdjKernel);
-        ImGui::InputFloat3("specular reflectance", &specReflectance.x);
+        ImGui::Text("Select Model");
+        if (ImGui::RadioButton("Head", &selectModel, 0)) init();
+        if (ImGui::RadioButton("Hand", &selectModel, 1)) init();
+        if (ImGui::RadioButton("Soap", &selectModel, 2)) init();
+
+        ImGui::Text("\n");
+        ImGui::Separator();
+        ImGui::Text("\n");
+
+        ImGui::SliderFloat("Blur", &kernelParam, 0.0f, 1.0f);
+        if (ImGui::Button("Reset Blur")) kernelParam = 0.1f;
+        ImGui::Text("\n");
+
+        ImGui::Checkbox("Blur according to Depth", &isAdjKernel);
+        ImGui::Text("\n");
+
+        ImGui::SliderFloat3("Light", &lightPosition.x, -50.0f, 50.0f);
+        if (ImGui::Button("Reset Light Position")) lightPosition = vec3(3, 3, 10);
+
+        //ImGui::Text("Blur");
+        //ImGui::SliderFloat(" ", &kernelParam, 0.0f, 1.0f);
+        ////ImGui::SameLine();
+        //if (ImGui::Button("Reset Blur")) kernelParam = 0.1f;
+
+        //ImGui::Text("Blur according to Depth");
+        //ImGui::Checkbox(" ", &isAdjKernel);
+
+        //ImGui::Text("Light Position");
+        //ImGui::SliderFloat3("", &lightPosition.x, -50.0f, 50.0f);
+        ////ImGui::SameLine();
+        //if (ImGui::Button("Reset Light Position")) lightPosition = vec3(3, 3, 10);
+
+        //ImGui::Text("Specular Reflectance");
+        //ImGui::InputFloat3(" ", &specReflectance.x);
+
+
 
         ImGui::End();
     }
 
-
     // Rendering
     ImGui::Render();
-
     ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }
 
@@ -479,31 +519,31 @@ void attachBuffers(FBO* fbo)
 }
 
 
-void processInput(GLFWwindow* window)
-{
-    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
-        glfwSetWindowShouldClose(window, true);
-
-    if (option != 1 && glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
-        option = 1;
-        std::cout << "no SSSSS result" << std::endl;
-    }
-
-    if (option != 2 && glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
-        option = 2;
-        std::cout << "Gaussian blur on diffuse texture" << std::endl;
-    }
-
-    if (option != 3 && glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
-        option = 3;
-        std::cout << "SSSSS result" << std::endl;
-    }
-    if (val != 1 && glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
-        val = 1;
-        std::cout << "modulated kernel width according to depth" << std::endl;
-    }
-    if (val != 0 && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
-        val = 0;
-        std::cout << "no modulated kernel" << std::endl;
-    }
-}
+//void processInput(GLFWwindow* window)
+//{
+//    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)
+//        glfwSetWindowShouldClose(window, true);
+//
+//    if (option != 1 && glfwGetKey(window, GLFW_KEY_1) == GLFW_PRESS) {
+//        option = 1;
+//        std::cout << "no SSSSS result" << std::endl;
+//    }
+//
+//    if (option != 2 && glfwGetKey(window, GLFW_KEY_2) == GLFW_PRESS) {
+//        option = 2;
+//        std::cout << "Gaussian blur on diffuse texture" << std::endl;
+//    }
+//
+//    if (option != 3 && glfwGetKey(window, GLFW_KEY_3) == GLFW_PRESS) {
+//        option = 3;
+//        std::cout << "SSSSS result" << std::endl;
+//    }
+//    if (val != 1 && glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS) {
+//        val = 1;
+//        std::cout << "modulated kernel width according to depth" << std::endl;
+//    }
+//    if (val != 0 && glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS) {
+//        val = 0;
+//        std::cout << "no modulated kernel" << std::endl;
+//    }
+//}
