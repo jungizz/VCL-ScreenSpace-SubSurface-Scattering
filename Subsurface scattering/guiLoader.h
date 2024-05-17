@@ -10,9 +10,13 @@
 
 int selectModel = 0;
 int selectScene = 0;
-bool isAdjKernel = false;
 
-vec3 specReflectance = vec3(0.028, 0.028, 0.028);
+float kernelParam = 0.1f;
+float specReflectance = 0.028;
+
+bool isAdjKernel = true;
+bool isEdgeDet = true;
+
 
 void guiInit(GLFWwindow* window, const char* glsl_version) {
 

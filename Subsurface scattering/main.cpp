@@ -38,9 +38,7 @@ void attachBuffers(FBO* fbo);
 void processInput(GLFWwindow* window);
 
 vec2 windowSize = { 1080, 720 };
-//int option = 1;
-//int val = 1;
-float kernelParam = 0.1f;
+
 
 int main(void) 
 {
@@ -70,7 +68,7 @@ int main(void)
 #endif
     
     glfwWindowHint(GLFW_SAMPLES, 8);                                        // 생성할 Window의 기본 설정
-    GLFWwindow* window = glfwCreateWindow(windowSize.x, windowSize.y, "Hello", NULL, NULL);   // 창 객체 생성
+    GLFWwindow* window = glfwCreateWindow(windowSize.x, windowSize.y, "Subsurface Scattering", NULL, NULL);   // 창 객체 생성
 
     glfwSetCursorPosCallback(window, cursorPosCallback);
     glfwSetScrollCallback(window, scrollCallback);
@@ -80,6 +78,8 @@ int main(void)
     init();       
     glfwSwapInterval(1);                       // 스왑 간격 : 0 설정하면 fps 제한X, 1 설정하면 fps 제한 60
     guiInit(window, glsl_version);
+
+    glEnable(GL_MULTISAMPLE);
 
     while (!glfwWindowShouldClose(window)) {   // 창이 닫히기 전까지 무한루프
         //processInput(window);
@@ -144,6 +144,23 @@ void init() {
         glfwTerminate();
         exit(EXIT_FAILURE);
     }
+
+    // Texture
+    if (selectModel == 0) {
+        diffTex= loadTextureMap("resources/LPS_lambertian.jpg");
+        normTex = loadTextureMap("resources/LPS_NormalMap.png");
+        roughTex = loadTextureMap("resources/LPS_Roughness.png");
+        specAOTex = loadTextureMap("resources/LPS_SpecularAO.png");
+    }
+    else if (selectModel == 1) {
+        diffTex = loadTextureMap("resources/hand1D.png");
+        normTex = loadTextureMap("resources/hand1N.png");
+    }
+    else if (selectModel == 2) {
+        diffTex = loadTextureMap("resources/soapD.png");
+        normTex = loadTextureMap("resources/soapN.png");
+    }
+
     diffProgram.loadShaders("diffShader.vert", "diffShader.frag");
     specProgram.loadShaders("specShader.vert", "specShader.frag");
     rowGaussianProgram.loadShaders("gaussianBlur.vert", "rowGaussianBlur.frag");
@@ -178,27 +195,10 @@ void init() {
     glEnableVertexAttribArray(2);
     glVertexAttribPointer(2, 2, GL_FLOAT, 0, 0, 0);
 
-
     glGenBuffers(1, &elementBuffer); 
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer); 
     glBufferData(GL_ELEMENT_ARRAY_BUFFER, triangles.size() * sizeof(u32vec3), triangles.data(), GL_STATIC_DRAW);
 
-
-    // Texture
-    if (selectModel == 0) {
-        diffTex= loadTextureMap("resources/LPS_lambertian.jpg");
-        normTex = loadTextureMap("resources/LPS_NormalMap.png");
-        roughTex = loadTextureMap("resources/LPS_Roughness.png");
-        specAOTex = loadTextureMap("resources/LPS_SpecularAO.png");
-    }
-    else if (selectModel == 1) {
-        diffTex = loadTextureMap("resources/hand1D.png");
-        normTex = loadTextureMap("resources/hand1N.png");
-    }
-    else if (selectModel == 2) {
-        diffTex = loadTextureMap("resources/soapD.png");
-        normTex = loadTextureMap("resources/soapN.png");
-    }
 
     // screen quad VAO
     glGenBuffers(1, &quadVertexBuffer);
@@ -223,8 +223,6 @@ void init() {
     glGenFramebuffers(1, &colGaussianFBO.frameBuffer);
     glBindFramebuffer(GL_FRAMEBUFFER, colGaussianFBO.frameBuffer);
     attachBuffers(&colGaussianFBO);
-
-    //glEnable(GL_MULTISAMPLE);
 }
 
 
@@ -235,11 +233,9 @@ void render(GLFWwindow* window)
     ivec2 nowSize;
     glfwGetFramebufferSize(window, &nowSize.x, &nowSize.y);
     glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0.1, 0.1, 0.1, 0);
+    glClearColor(0, 0 , 0, 0);
     glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-    //if (isMSAA) glEnable(GL_MULTISAMPLE);
 
     glUseProgram(diffProgram.programID);
 
@@ -289,7 +285,7 @@ void render(GLFWwindow* window)
     // 2. draw on rowGaussianFBO
     glBindFramebuffer(GL_FRAMEBUFFER, rowGaussianFBO.frameBuffer);
     glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0.1, 0.1, 0.1, 0);
+    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(rowGaussianProgram.programID);
@@ -314,6 +310,9 @@ void render(GLFWwindow* window)
     GLuint adjKernelLocation = glGetUniformLocation(rowGaussianProgram.programID, "isAdjKernel");
     glUniform1i(adjKernelLocation, (isAdjKernel) ? 1 : 0);
 
+    GLuint edgeDetLocation = glGetUniformLocation(rowGaussianProgram.programID, "isEdgeDet");
+    glUniform1i(edgeDetLocation, (isEdgeDet) ? 1 : 0);
+
     GLuint kerParaLocation = glGetUniformLocation(rowGaussianProgram.programID, "kernelParam");
     glUniform1i(kerParaLocation, int(kernelParam*20));
 
@@ -325,7 +324,7 @@ void render(GLFWwindow* window)
     // 3. draw on colGaussianFBO 
     glBindFramebuffer(GL_FRAMEBUFFER, colGaussianFBO.frameBuffer);
     glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0.1, 0.1, 0.1, 0);
+    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(colGaussianProgram.programID);
@@ -349,6 +348,9 @@ void render(GLFWwindow* window)
     adjKernelLocation = glGetUniformLocation(colGaussianProgram.programID, "isAdjKernel");
     glUniform1i(adjKernelLocation, (isAdjKernel) ? 1 : 0);
 
+    edgeDetLocation = glGetUniformLocation(colGaussianProgram.programID, "isEdgeDet");
+    glUniform1i(edgeDetLocation, (isEdgeDet) ? 1 : 0);
+
     kerParaLocation = glGetUniformLocation(colGaussianProgram.programID, "kernelParam");
     glUniform1i(kerParaLocation, int(kernelParam*20));
 
@@ -361,7 +363,7 @@ void render(GLFWwindow* window)
     // 4. draw on specular FBO
     glBindFramebuffer(GL_FRAMEBUFFER, 0);
     glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0.1, 0.1, 0.1, 0);
+    glClearColor(0, 0, 0, 0);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
     glUseProgram(specProgram.programID);
@@ -401,8 +403,8 @@ void render(GLFWwindow* window)
     GLuint diffModelTexLocation = glGetUniformLocation(specProgram.programID, "pass1Tex");
     glUniform1i(diffModelTexLocation, 3);
 
-    GLuint specRefLocation = glGetUniformLocation(specProgram.programID, "size");
-    glUniform3fv(specRefLocation, 1, value_ptr(specReflectance));
+    GLuint specRefLocation = glGetUniformLocation(specProgram.programID, "specReflectance");
+    glUniform3fv(specRefLocation, 1, value_ptr(vec3(specReflectance)));
 
     sizeLocation = glGetUniformLocation(specProgram.programID, "size");
     glUniform2f(sizeLocation, static_cast<float>(nowSize.x), static_cast<float>(nowSize.y));
@@ -449,26 +451,15 @@ void render(GLFWwindow* window)
         ImGui::Checkbox("Blur according to Depth", &isAdjKernel);
         ImGui::Text("\n");
 
+        ImGui::Checkbox("Edge not blurred", &isEdgeDet);
+        ImGui::Text("\n");
+
         ImGui::SliderFloat3("Light", &lightPosition.x, -50.0f, 50.0f);
         if (ImGui::Button("Reset Light Position")) lightPosition = vec3(3, 3, 10);
+        ImGui::Text("\n");
 
-        //ImGui::Text("Blur");
-        //ImGui::SliderFloat(" ", &kernelParam, 0.0f, 1.0f);
-        ////ImGui::SameLine();
-        //if (ImGui::Button("Reset Blur")) kernelParam = 0.1f;
-
-        //ImGui::Text("Blur according to Depth");
-        //ImGui::Checkbox(" ", &isAdjKernel);
-
-        //ImGui::Text("Light Position");
-        //ImGui::SliderFloat3("", &lightPosition.x, -50.0f, 50.0f);
-        ////ImGui::SameLine();
-        //if (ImGui::Button("Reset Light Position")) lightPosition = vec3(3, 3, 10);
-
-        //ImGui::Text("Specular Reflectance");
-        //ImGui::InputFloat3(" ", &specReflectance.x);
-
-
+        ImGui::SliderFloat("Specular", &specReflectance, 0.0f, 1.0f);
+        if (ImGui::Button("Reset Specular")) specReflectance = 0.028;
 
         ImGui::End();
     }
