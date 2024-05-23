@@ -1,0 +1,43 @@
+[33m6298b9a[m[33m ([m[1;36mHEAD -> [m[1;32mmaster[m[33m, [m[1;31morigin/master[m[33m)[m Edge Detection and adjust kernel size
+[33me31ade9[m Add hand and soap model Edit Gui
+[33m981cdef[m Gui setting and hand models
+[33m184e8da[m render gui need to gui setting!
+[33m636a645[m adjust kernel size according to depth +) imgui 추가 및 에러 미해결
+[33me4bbeff[m fix specular BRDF
+[33m2e73209[m fix specular BRDF
+[33m94f2020[m check depth map
+[33mbaeae5a[m Merge branch 'master' of https://github.com/jungizz/VCL-ScreenSpace-SubSurface-Scattering
+[33md55d0f9[m fix separable gaussian - row, colume 같이 했을 때 생기는 문제 해결 - key input 적용
+[33me576456[m Update README.md
+[33mdb3817d[m Create README.md
+[33md53f8ec[m Add assimp library vcpkg탈출!
+[33m91add33[m Complete kernel size [0,1]이 아니라 [n, f]
+[33m79302dc[m compute kernel size (both row and col Gaussian) 근데 안됨 렉 개많이걸려
+[33m65b2ec9[m compute kernel size (only row Gaussian)
+[33mcb790d0[m edit far and near
+[33ma13ea54[m length test....... (아마 아닐듯)
+[33maf1d543[m corrrect typos
+[33me5eb842[m sum of gaussian
+[33m1bb9975[m[33m ([m[1;32mtest[m[33m)[m [2/20] diffuse(separable blur) + specular(color)
+[33mb956e21[m edit variable name
+[33m7254800[m separable gaussian blur 버퍼 2개 사용하여 가로, 세로 블러한 결과 저장
+[33m981989f[m compute camera coord depth
+[33mdf0ba7e[m edit gaussian blur only to diffuse
+[33mee2ffeb[m diffuse Gaussian blur + specular
+[33mae3b57b[m change variable name
+[33m815cddf[m diffuse gaussian blur
+[33m142d79f[m depthFBO depthmap이 안보여서 depthFBO만들어서 하려했는데.. 얘도 안보이고 뭐.. 삭제예정
+[33mb1d1478[m edit file path
+[33mbbae2a1[m fix error in gaussianBlur.frag
+[33ma04c4af[m Add gaussian FBO - make FBO struct - error in gaussianBlur.frag
+[33m3d09e06[m draw depthbuffer
+[33ma236d87[m draw FBO color texture on default framebuffer (quad plane with the attached framebuffer color texture)
+[33m5be91aa[m make Framebuffer Object and attach color/depth buffer
+[33m2a061ff[m edit normal mapping, fovy, light dir 전에 한건 bump mapping이었음,, normal mapping이랑 다른거임
+[33mfe772d4[m normal mapping
+[33m7884545[m Gamma correction and Remapping roughness
+[33mbc8abd1[m set specular reflecrance and roughness add light
+[33md9a1bcd[m specular/diffuse BRDF
+[33mfb563fe[m Add light
+[33m75bd9b6[m Add project files.
+[33m633e484[m Add .gitattributes and .gitignore.

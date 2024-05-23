@@ -18,7 +18,7 @@ const float PI = 3.14159265358979f;
 //float scaleFactor = 1.0;
 //bool isShrinking = true;
 //float theta = 0;
-float cameraDistance = 2;
+float cameraDistance = 1.2;
 
 float cameraTheta = 0;      // 수평 회전 각도
 float cameraPhi = 0;        // 수직 회전 각도

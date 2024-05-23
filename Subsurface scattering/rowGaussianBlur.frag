@@ -10,7 +10,7 @@ uniform vec2 size;
 uniform float screenWidth; // screen width in world coord
 uniform int isAdjKernel;
 uniform int isEdgeDet;
-uniform int kernelParam;
+uniform float kernelParam;
 
 out vec4 out_Color;
 
@@ -80,24 +80,27 @@ void main(void)
 	{
 		//float variance = variances[i];	
 		float sigma = sqrt(variances[i]) * .001; // kernel size (mm단위를 m단위로 바꿈)
-		float sigmaPri = (n * sigma) / worldZ; // kernel size at screen in world coord
+		float sigmaPri = abs((n * sigma) / worldZ); // kernel size at screen in world coord
 		sigmaPri /= screenWidth; // kernel size at screen in normal coord [0,1]
 		sigmaPri *= size.x; //change to pixel coord
 		float variance = sigmaPri * sigmaPri;
 		
-		int kernel;
-		if(isAdjKernel==0) kernel = min(10,int(sigmaPri));
-		else if(isAdjKernel == 1) kernel = min(10, int(mix(sigmaPri*10, sigmaPri*0.1, z)));
+		float kernel = sigmaPri;
+		//if(isAdjKernel==0) kernel = min(10,sigmaPri);
+		//else if(isAdjKernel == 1) kernel = min(10, mix(sigmaPri*10, sigmaPri*0.1, z));
 		kernel *= kernelParam;
 		
-		if(isEdgeDet==1 && isEdge) kernel = 1;
+ 		//if(isEdgeDet==1 && isEdge) kernel = 1;
 
 		vec3 weight = weights[i];
 	
-		for(int dx=-kernel; dx<=kernel; dx++)
+		for(float dx=-kernel; dx<=kernel; dx+=kernel/10.)
 		{
 			float xx =  gl_FragCoord.x / size.x + (dx * texelSize.x);	
-			vec3 w = weight * exp(-(dx*dx)/(2.0 * variance));
+			float depth = texture(depthTex, vec2(xx, gl_FragCoord.y / size.y)).r; // d[0,1] (가까울수록 0)
+			float sampleZ = LinearizeDepth(depth); // world coord linear depth z[n, f]
+			
+			vec3 w = weight * exp(-(dx*dx)/(2.0 * variance)) * exp(-pow((sampleZ-worldZ), 2)/(0.01*0.01));
 			wSum += w;
 	
 			resColor += w * texture(colorTex, vec2(xx, gl_FragCoord.y/size.y)).rgb;

@@ -35,10 +35,11 @@ void init();
 
 GLuint loadTextureMap(const char* filename);
 void attachBuffers(FBO* fbo);
-void processInput(GLFWwindow* window);
+//void processInput(GLFWwindow* window);
+void calculateLightPos(float t);
 
 vec2 windowSize = { 1080, 720 };
-
+float lightRotParam = 0;
 
 int main(void) 
 {
@@ -83,9 +84,12 @@ int main(void)
 
     while (!glfwWindowShouldClose(window)) {   // 창이 닫히기 전까지 무한루프
         //processInput(window);
+        if (isAutoRotate) calculateLightPos(lightRotParam);
         render(window);
         glfwSwapBuffers(window);
         glfwPollEvents();                      // 대기 중인 이벤트 처리
+
+
 
     }                                          
     glfwDestroyWindow(window);                 // 루프가 끝났으므로 종료
@@ -130,8 +134,6 @@ GLuint specAOTex = 0; // specularAO map ID (빨간부분은 specular, 파란부�
 vec3 lightPosition = vec3(3, 3, 10);
 vec3 lightColor = vec3(500);
 vec3 ambientLight = vec3(0.0);
-
-
 
 void init() {
     std::string modelfile;
@@ -314,7 +316,7 @@ void render(GLFWwindow* window)
     glUniform1i(edgeDetLocation, (isEdgeDet) ? 1 : 0);
 
     GLuint kerParaLocation = glGetUniformLocation(rowGaussianProgram.programID, "kernelParam");
-    glUniform1i(kerParaLocation, int(kernelParam*20));
+    glUniform1f(kerParaLocation, kernelParam);
 
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
@@ -352,7 +354,7 @@ void render(GLFWwindow* window)
     glUniform1i(edgeDetLocation, (isEdgeDet) ? 1 : 0);
 
     kerParaLocation = glGetUniformLocation(colGaussianProgram.programID, "kernelParam");
-    glUniform1i(kerParaLocation, int(kernelParam*20));
+    glUniform1f(kerParaLocation, kernelParam);
 
     // Draw a quad to apply Gaussian blur
     glBindVertexArray(quadArrrayBuffer);
@@ -429,33 +431,35 @@ void render(GLFWwindow* window)
 
         ImGui::Begin("Setting");
 
+        ImGui::Text("Select Model");
+        if (ImGui::RadioButton("Head", &selectModel, 0)) init();
+        if (ImGui::RadioButton("Hand", &selectModel, 1)) init();
+        if (ImGui::RadioButton("Soap", &selectModel, 2)) init();
+
         ImGui::Text("Select Scene");
         ImGui::RadioButton("Default Rendering", &selectScene, 0);
         ImGui::RadioButton("Subsurface Scattering", &selectScene, 1);
         ImGui::RadioButton("Gaussian blur on Diffuse", &selectScene, 2);
         ImGui::Text("\n");
 
-        ImGui::Text("Select Model");
-        if (ImGui::RadioButton("Head", &selectModel, 0)) init();
-        if (ImGui::RadioButton("Hand", &selectModel, 1)) init();
-        if (ImGui::RadioButton("Soap", &selectModel, 2)) init();
 
         ImGui::Text("\n");
         ImGui::Separator();
         ImGui::Text("\n");
 
-        ImGui::SliderFloat("Blur", &kernelParam, 0.0f, 1.0f);
-        if (ImGui::Button("Reset Blur")) kernelParam = 0.1f;
+        ImGui::SliderFloat("Blur", &kernelParam, 0.5f, 2.0f);
+        if (ImGui::Button("Reset Blur")) kernelParam = 1.0f;
         ImGui::Text("\n");
 
-        ImGui::Checkbox("Blur according to Depth", &isAdjKernel);
-        ImGui::Text("\n");
+        //ImGui::Checkbox("Blur according to Depth", &isAdjKernel);
+        //ImGui::Text("\n");
 
-        ImGui::Checkbox("Edge not blurred", &isEdgeDet);
-        ImGui::Text("\n");
+        //ImGui::Checkbox("Edge not blurred", &isEdgeDet);
+        //ImGui::Text("\n");
 
         ImGui::SliderFloat3("Light", &lightPosition.x, -50.0f, 50.0f);
         if (ImGui::Button("Reset Light Position")) lightPosition = vec3(3, 3, 10);
+        ImGui::Checkbox("Auto Rotation", &isAutoRotate);
         ImGui::Text("\n");
 
         ImGui::SliderFloat("Specular", &specReflectance, 0.0f, 1.0f);
@@ -509,7 +513,14 @@ void attachBuffers(FBO* fbo)
         std::cout << "ERROR::FRAMEBUFFER:: Framebuffer is not complete!" << std::endl;
 }
 
+void calculateLightPos(float t) {
+    float angle = t * 2.0f * PI;
+    lightPosition.x = 3.0f * cos(angle);
+    lightPosition.y = 3.0f * sin(angle);
 
+    lightRotParam += 0.003f;
+    if (lightRotParam > 1.0f) lightRotParam -= 1.0f;
+}
 //void processInput(GLFWwindow* window)
 //{
 //    if (glfwGetKey(window, GLFW_KEY_ESCAPE) == GLFW_PRESS)

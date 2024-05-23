@@ -11,12 +11,12 @@
 int selectModel = 0;
 int selectScene = 0;
 
-float kernelParam = 0.1f;
+float kernelParam = 1.0f;
 float specReflectance = 0.028;
 
 bool isAdjKernel = true;
-bool isEdgeDet = true;
-
+bool isEdgeDet = false;
+bool isAutoRotate = false;
 
 void guiInit(GLFWwindow* window, const char* glsl_version) {
 
