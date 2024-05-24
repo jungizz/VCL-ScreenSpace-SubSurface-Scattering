@@ -8,10 +8,8 @@ uniform vec3 cameraPosition;
 uniform vec3 lightPosition;
 uniform vec3 lightColor;
 uniform vec3 ambientLight;
-//uniform float shininess;
 
 uniform sampler2D normTex;
-uniform sampler2D specAOTex;
 
 in vec3 normal;
 in vec3 worldPosition;

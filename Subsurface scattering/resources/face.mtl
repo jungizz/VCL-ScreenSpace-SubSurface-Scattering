@@ -1,0 +1,12 @@
+# Blender 3.5.1 MTL File: 'headOnly.blend'
+# www.blender.org
+
+newmtl Material.001
+Ns 654.628113
+Ka 1.000000 1.000000 1.000000
+Ks 0.500000 0.500000 0.500000
+Ke 0.000000 0.000000 0.000000
+Ni 1.450000
+d 1.000000
+illum 2
+map_Kd C:/Users/songj/Downloads/3D_ScanStore_Free+Head/Textures/JPG/Face/Face_Albedo.jpg

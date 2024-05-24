@@ -18,12 +18,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="shader.frag">
-      <Filter>소스 파일</Filter>
-    </None>
-    <None Include="shader.vert">
-      <Filter>소스 파일</Filter>
-    </None>
     <None Include="gaussianBlur.vert">
       <Filter>소스 파일</Filter>
     </None>

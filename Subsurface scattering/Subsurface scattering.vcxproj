@@ -132,6 +132,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)/lib</AdditionalLibraryDirectories>
+      <AdditionalDependencies>glew32s.lib;glfw3.lib;opengl32.lib;assimp-vc143-mt.lib;$(CoreLibraryDependencies);%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
@@ -150,8 +151,6 @@
     <None Include="rowGaussianBlur.frag" />
     <None Include="gaussianBlur.vert" />
     <None Include="colGaussianBlur.frag" />
-    <None Include="shader.frag" />
-    <None Include="shader.vert" />
     <None Include="specShader.frag" />
     <None Include="specShader.vert" />
   </ItemGroup>

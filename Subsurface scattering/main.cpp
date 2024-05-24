@@ -129,7 +129,7 @@ Program colGaussianProgram;
 GLuint diffTex = 0; // duffuse map ID
 GLuint normTex = 0; // normal map ID
 GLuint roughTex = 0; // roughness map ID
-GLuint specAOTex = 0; // specularAO map ID (빨간부분은 specular, 파란부분은 ambient occlusion? 요런느낌)
+//GLuint specAOTex = 0; 
 
 vec3 lightPosition = vec3(3, 3, 10);
 vec3 lightColor = vec3(500);
@@ -138,8 +138,9 @@ vec3 ambientLight = vec3(0.0);
 void init() {
     std::string modelfile;
     if(selectModel == 0) modelfile = "resources/LPS_Head.obj";
-    if(selectModel == 1) modelfile = "resources/hand1.obj";
-    if(selectModel == 2) modelfile = "resources/soap.obj";
+    else if (selectModel == 1) modelfile = "resources/face.obj";
+    else if (selectModel == 2) modelfile = "resources/face2.obj";
+    else if (selectModel == 3) modelfile = "resources/dragon.obj";
 
     if (!loadObj(modelfile)) {
         std::cerr << "Failed to load the model!" << std::endl;
@@ -152,21 +153,28 @@ void init() {
         diffTex= loadTextureMap("resources/LPS_lambertian.jpg");
         normTex = loadTextureMap("resources/LPS_NormalMap.png");
         roughTex = loadTextureMap("resources/LPS_Roughness.png");
-        specAOTex = loadTextureMap("resources/LPS_SpecularAO.png");
+        //specAOTex = loadTextureMap("resources/LPS_SpecularAO.png");
     }
     else if (selectModel == 1) {
-        diffTex = loadTextureMap("resources/hand1D.png");
-        normTex = loadTextureMap("resources/hand1N.png");
+        diffTex = loadTextureMap("resources/Face_Albedo.jpg");
+        normTex = loadTextureMap("resources/Face_Normal.jpg");
+        roughTex = loadTextureMap("resources/Face_Roughness.jpg");
+        //specAOTex = loadTextureMap("resources/Face_Specular.jpg");
     }
     else if (selectModel == 2) {
-        diffTex = loadTextureMap("resources/soapD.png");
-        normTex = loadTextureMap("resources/soapN.png");
+        diffTex = loadTextureMap("resources/face2_Colour.jpg");
+        normTex = loadTextureMap("resources/face2_Normal.jpg");
+    }
+    else if (selectModel == 3) {
+        diffTex = loadTextureMap("resources/dragonD.png");
+        normTex = loadTextureMap("resources/dragonN.png");
     }
 
     diffProgram.loadShaders("diffShader.vert", "diffShader.frag");
     specProgram.loadShaders("specShader.vert", "specShader.frag");
     rowGaussianProgram.loadShaders("gaussianBlur.vert", "rowGaussianBlur.frag");
     colGaussianProgram.loadShaders("gaussianBlur.vert", "colGaussianBlur.frag");
+
 
     // Vertex Buffer Object (VBO)
     glGenBuffers(1, &vertexBuffer); // 버퍼 1개 생성
@@ -273,10 +281,6 @@ void render(GLFWwindow* window)
     glActiveTexture(GL_TEXTURE0);
     glBindTexture(GL_TEXTURE_2D, normTex);
     GLuint normTexLocation = glGetUniformLocation(diffProgram.programID, "normTex");
-    glActiveTexture(GL_TEXTURE1);
-    glBindTexture(GL_TEXTURE_2D, specAOTex);
-    GLuint specTexLocation = glGetUniformLocation(diffProgram.programID, "specAOTex");
-    glUniform1i(specTexLocation, 1);
 
     glBindVertexArray(vertexArray);
     glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementBuffer);
@@ -309,12 +313,6 @@ void render(GLFWwindow* window)
     GLuint widthLocation = glGetUniformLocation(rowGaussianProgram.programID, "screenWidth");
     glUniform1f(widthLocation, 2 * 0.01 * (tan(fovy / 2) * (nowSize.x/nowSize.y))); // screen width in world coord
 
-    GLuint adjKernelLocation = glGetUniformLocation(rowGaussianProgram.programID, "isAdjKernel");
-    glUniform1i(adjKernelLocation, (isAdjKernel) ? 1 : 0);
-
-    GLuint edgeDetLocation = glGetUniformLocation(rowGaussianProgram.programID, "isEdgeDet");
-    glUniform1i(edgeDetLocation, (isEdgeDet) ? 1 : 0);
-
     GLuint kerParaLocation = glGetUniformLocation(rowGaussianProgram.programID, "kernelParam");
     glUniform1f(kerParaLocation, kernelParam);
 
@@ -346,12 +344,6 @@ void render(GLFWwindow* window)
 
     GLuint heightLocation = glGetUniformLocation(colGaussianProgram.programID, "screenHeight");
     glUniform1f(heightLocation, 2 * 0.01 * tan(fovy / 2)); // screen height in world coord
-
-    adjKernelLocation = glGetUniformLocation(colGaussianProgram.programID, "isAdjKernel");
-    glUniform1i(adjKernelLocation, (isAdjKernel) ? 1 : 0);
-
-    edgeDetLocation = glGetUniformLocation(colGaussianProgram.programID, "isEdgeDet");
-    glUniform1i(edgeDetLocation, (isEdgeDet) ? 1 : 0);
 
     kerParaLocation = glGetUniformLocation(colGaussianProgram.programID, "kernelParam");
     glUniform1f(kerParaLocation, kernelParam);
@@ -396,7 +388,7 @@ void render(GLFWwindow* window)
     glUniform1i(roughTexLocation, 1);
 
     glActiveTexture(GL_TEXTURE2);
-    glBindTexture(GL_TEXTURE_2D, colGaussianFBO.colorTexBuffer);
+    glBindTexture(GL_TEXTURE_2D, rowGaussianFBO.colorTexBuffer);
     GLuint finDiffTexLocation = glGetUniformLocation(specProgram.programID, "gaussianDiffTex");
     glUniform1i(finDiffTexLocation, 2);
 
@@ -432,9 +424,10 @@ void render(GLFWwindow* window)
         ImGui::Begin("Setting");
 
         ImGui::Text("Select Model");
-        if (ImGui::RadioButton("Head", &selectModel, 0)) init();
-        if (ImGui::RadioButton("Hand", &selectModel, 1)) init();
-        if (ImGui::RadioButton("Soap", &selectModel, 2)) init();
+        if (ImGui::RadioButton("Head1", &selectModel, 0)) init();
+        if (ImGui::RadioButton("Head2", &selectModel, 1)) init();
+        if (ImGui::RadioButton("Head3", &selectModel, 2)) init();
+        if (ImGui::RadioButton("Dragon", &selectModel, 3)) init();
 
         ImGui::Text("Select Scene");
         ImGui::RadioButton("Default Rendering", &selectScene, 0);

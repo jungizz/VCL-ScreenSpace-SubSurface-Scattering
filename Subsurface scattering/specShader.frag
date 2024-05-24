@@ -99,5 +99,4 @@ void main(void)
 	else if(selectScene == 2) c = Fd;
 
 	out_Color = vec4(c, 1);
-
 }

@@ -29,6 +29,7 @@ void processMesh(aiMesh* mesh, const aiScene* scene)
     vertices.resize(mesh->mNumVertices);
     normals.resize(mesh->mNumVertices);
     texcoords.resize(mesh->mNumVertices);
+    triangles.resize(mesh->mNumFaces);
 
     for (unsigned int i = 0; i < mesh->mNumVertices; ++i)
     {
@@ -57,7 +58,7 @@ void processMesh(aiMesh* mesh, const aiScene* scene)
             vec.y = mesh->mTextureCoords[0][i].y;
             texcoords[i] = vec;
         }
-        else texcoords.push_back(glm::vec2(0.0f, 0.0f));
+        else texcoords[i] = glm::vec2(0.0f, 0.0f);
 
     }
 
@@ -65,7 +66,7 @@ void processMesh(aiMesh* mesh, const aiScene* scene)
     for (unsigned int i = 0; i < mesh->mNumFaces; ++i)
     {
         aiFace face = mesh->mFaces[i];
-        triangles.push_back(glm::u32vec3(face.mIndices[0], face.mIndices[1], face.mIndices[2]));
+        triangles[i] = glm::u32vec3(face.mIndices[0], face.mIndices[1], face.mIndices[2]);
     }
 }
 
@@ -83,7 +84,7 @@ void processNode(aiNode* node, const aiScene* scene)
 bool loadObj(const std::string& filePath)
 {
     Assimp::Importer importer;
-    const aiScene* scene = importer.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs);
+    const aiScene* scene = importer.ReadFile(filePath, aiProcess_Triangulate | aiProcess_FlipUVs | aiProcess_FixInfacingNormals);
 
     if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode)
     {
@@ -91,6 +92,7 @@ bool loadObj(const std::string& filePath)
         return 0;
     }
     processNode(scene->mRootNode, scene);
+    return 1;
 }
 
 #endif

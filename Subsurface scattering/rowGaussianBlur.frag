@@ -8,8 +8,6 @@ uniform sampler2D colorTex;
 uniform sampler2D depthTex;
 uniform vec2 size;
 uniform float screenWidth; // screen width in world coord
-uniform int isAdjKernel;
-uniform int isEdgeDet;
 uniform float kernelParam;
 
 out vec4 out_Color;
@@ -24,12 +22,9 @@ const vec3  weights[6] = { vec3(0.233, 0.455, 0.649),
 						   vec3(0.358, 0.004, 0.000),
 						   vec3(0.078, 0.000, 0.000) };
 
-const float alpha = 11; // glbal SSS level
-const float beta = 800; // how SSS varies with depth gradient
 
 float n = 0.01; // near
 float f = 10.0;  // far 
-bool isEdge;
 
 float LinearizeDepth(float dPri)
 {
@@ -37,43 +32,15 @@ float LinearizeDepth(float dPri)
 	return (2 * n * f) / (n + f + d * (n - f)); // z[n, f]
 }
 
-float luminance(vec3 color)
-{
-	return dot(lum, color);
-}
-
-float edgeDetection()
-{
-	ivec2 pix = ivec2(gl_FragCoord.xy);
-
-	float s00 = luminance(texelFetchOffset(colorTex, pix, 0, ivec2(-1,1)).rgb);
-	float s10 = luminance(texelFetchOffset(colorTex, pix, 0, ivec2(-1,0)).rgb);
-	float s20 = luminance(texelFetchOffset(colorTex, pix, 0, ivec2(-1,-1)).rgb);
-	float s01 = luminance(texelFetchOffset(colorTex, pix, 0, ivec2(0,1)).rgb);
-	float s21 = luminance(texelFetchOffset(colorTex, pix, 0, ivec2(0,-1)).rgb);
-	float s02 = luminance(texelFetchOffset(colorTex, pix, 0, ivec2(1,1)).rgb);
-	float s12 = luminance(texelFetchOffset(colorTex, pix, 0, ivec2(1,0)).rgb);
-	float s22 = luminance(texelFetchOffset(colorTex, pix, 0, ivec2(1,-1)).rgb);
-
-	float sx = s00 + 2 * s10 + s20 - (s02 + 2 * s12 + s22);
-	float sy = s00 + 2 * s01 + s02 - (s20 + 2 * s21 + s22);
-
-	float g = sx * sx + sy * sy;
-	return g;
-}
-
-
 void main(void)
 {
-	if(edgeDetection() >= edgeThreshold) isEdge = true;
-
 	float depth = texture(depthTex, gl_FragCoord.xy / size).r; // d[0,1] (가까울수록 0)
 	float worldZ = LinearizeDepth(depth); // world coord linear depth z[n, f]
 	float z = worldZ / f; //[0, 1]
 
 	vec2 texelSize = 1.0/size;
 	
-	vec3 wSum = vec3(0);
+	vec3 wSum = vec3(0.0);
 	vec3 resColor = vec3(0.0);
 
 	for(int i=0; i<weights.length(); i++)
