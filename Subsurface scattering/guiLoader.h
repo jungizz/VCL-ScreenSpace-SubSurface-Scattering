@@ -11,7 +11,7 @@
 int selectModel = 0;
 int selectScene = 0;
 
-float kernelParam = 1.0f;
+float kernelParam = 2.0f;
 float specReflectance = 0.028;
 
 bool isAutoRotate = false;

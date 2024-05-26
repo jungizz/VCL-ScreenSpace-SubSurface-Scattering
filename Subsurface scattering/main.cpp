@@ -30,15 +30,18 @@ struct FBO {
     GLuint depthBuffer = 0;
 };
 
-void render(GLFWwindow* window);
+void cleanUp();
 void init();
+void render(GLFWwindow* window);
 
 GLuint loadTextureMap(const char* filename);
 void attachBuffers(FBO* fbo);
 //void processInput(GLFWwindow* window);
 void calculateLightPos(float t);
 
-vec2 windowSize = { 1080, 720 };
+//vec2 windowSize = { 1080, 720 };
+vec2 windowSize = { 1920, 974 };
+
 float lightRotParam = 0;
 
 int main(void) 
@@ -88,9 +91,6 @@ int main(void)
         render(window);
         glfwSwapBuffers(window);
         glfwPollEvents();                      // 대기 중인 이벤트 처리
-
-
-
     }                                          
     glfwDestroyWindow(window);                 // 루프가 끝났으므로 종료
     glfwTerminate();
@@ -135,12 +135,27 @@ vec3 lightPosition = vec3(3, 3, 10);
 vec3 lightColor = vec3(500);
 vec3 ambientLight = vec3(0.0);
 
-void init() {
+void cleanUp() {
+    glDeleteBuffers(1, &vertexBuffer);
+    glDeleteBuffers(1, &normalBuffer);
+    glDeleteBuffers(1, &texcoordBuffer);
+    glDeleteBuffers(1, &elementBuffer);
+    glDeleteVertexArrays(1, &vertexArray);
+
+    glDeleteBuffers(1, &quadVertexBuffer);
+    glDeleteVertexArrays(1, &quadArrrayBuffer);
+
+    glDeleteFramebuffers(1, &diffFBO.frameBuffer);
+    glDeleteFramebuffers(1, &rowGaussianFBO.frameBuffer);
+    glDeleteFramebuffers(1, &colGaussianFBO.frameBuffer);
+}
+
+void loadModel() {
     std::string modelfile;
-    if(selectModel == 0) modelfile = "resources/LPS_Head.obj";
+    if (selectModel == 0) modelfile = "resources/LPS_Head.obj";
     else if (selectModel == 1) modelfile = "resources/face.obj";
     else if (selectModel == 2) modelfile = "resources/face2.obj";
-    else if (selectModel == 3) modelfile = "resources/dragon.obj";
+    //else if (selectModel == 3) modelfile = "resources/dragon.obj";
 
     if (!loadObj(modelfile)) {
         std::cerr << "Failed to load the model!" << std::endl;
@@ -150,7 +165,7 @@ void init() {
 
     // Texture
     if (selectModel == 0) {
-        diffTex= loadTextureMap("resources/LPS_lambertian.jpg");
+        diffTex = loadTextureMap("resources/LPS_lambertian.jpg");
         normTex = loadTextureMap("resources/LPS_NormalMap.png");
         roughTex = loadTextureMap("resources/LPS_Roughness.png");
         //specAOTex = loadTextureMap("resources/LPS_SpecularAO.png");
@@ -165,16 +180,19 @@ void init() {
         diffTex = loadTextureMap("resources/face2_Colour.jpg");
         normTex = loadTextureMap("resources/face2_Normal.jpg");
     }
-    else if (selectModel == 3) {
-        diffTex = loadTextureMap("resources/dragonD.png");
-        normTex = loadTextureMap("resources/dragonN.png");
-    }
+    //else if (selectModel == 3) {
+    //    diffTex = loadTextureMap("resources/dragonD.png");
+    //    normTex = loadTextureMap("resources/dragonN.png");
+    //}
+}
+void init() {
+    cleanUp();
+    loadModel();
 
     diffProgram.loadShaders("diffShader.vert", "diffShader.frag");
     specProgram.loadShaders("specShader.vert", "specShader.frag");
     rowGaussianProgram.loadShaders("gaussianBlur.vert", "rowGaussianBlur.frag");
     colGaussianProgram.loadShaders("gaussianBlur.vert", "colGaussianBlur.frag");
-
 
     // Vertex Buffer Object (VBO)
     glGenBuffers(1, &vertexBuffer); // 버퍼 1개 생성
@@ -235,7 +253,6 @@ void init() {
     attachBuffers(&colGaussianFBO);
 }
 
-
 void render(GLFWwindow* window) 
 {
     // 1. draw on diffuse FBO
@@ -243,9 +260,10 @@ void render(GLFWwindow* window)
     ivec2 nowSize;
     glfwGetFramebufferSize(window, &nowSize.x, &nowSize.y);
     glViewport(0, 0, nowSize.x, nowSize.y);
-    glClearColor(0, 0 , 0, 0);
+    glClearColor(0, 0, 0, 0);
     glEnable(GL_DEPTH_TEST);
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
 
     glUseProgram(diffProgram.programID);
 
@@ -427,7 +445,7 @@ void render(GLFWwindow* window)
         if (ImGui::RadioButton("Head1", &selectModel, 0)) init();
         if (ImGui::RadioButton("Head2", &selectModel, 1)) init();
         if (ImGui::RadioButton("Head3", &selectModel, 2)) init();
-        if (ImGui::RadioButton("Dragon", &selectModel, 3)) init();
+        //if (ImGui::RadioButton("Dragon", &selectModel, 3)) init();
 
         ImGui::Text("Select Scene");
         ImGui::RadioButton("Default Rendering", &selectScene, 0);
@@ -440,8 +458,8 @@ void render(GLFWwindow* window)
         ImGui::Separator();
         ImGui::Text("\n");
 
-        ImGui::SliderFloat("Blur", &kernelParam, 0.5f, 2.0f);
-        if (ImGui::Button("Reset Blur")) kernelParam = 1.0f;
+        ImGui::SliderFloat("Blur", &kernelParam, 0.5f, 3.0f);
+        if (ImGui::Button("Reset Blur")) kernelParam = 2.0f;
         ImGui::Text("\n");
 
         //ImGui::Checkbox("Blur according to Depth", &isAdjKernel);
@@ -511,7 +529,8 @@ void calculateLightPos(float t) {
     lightPosition.x = 3.0f * cos(angle);
     lightPosition.y = 3.0f * sin(angle);
 
-    lightRotParam += 0.003f;
+    //lightRotParam += 0.02f;
+    lightRotParam += 0.01f;
     if (lightRotParam > 1.0f) lightRotParam -= 1.0f;
 }
 //void processInput(GLFWwindow* window)
